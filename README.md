@@ -2,8 +2,6 @@
 
 **Private money for the quantum era.** A proof-of-work chain where every transaction hides its sender, receiver and amount, and where payments to quantum addresses are found with ML-KEM-768.
 
-[![tests](https://github.com/Mojavechain/mojave/actions/workflows/test.yml/badge.svg)](https://github.com/Mojavechain/mojave/actions/workflows/test.yml)
-
 - Live testnet, explorer and wallet: https://mojavechain.org
 - Whitepaper: [WHITEPAPER.md](WHITEPAPER.md) · https://mojavechain.org/whitepaper
 - X: [@MojavechainL1](https://x.com/MojavechainL1)
@@ -31,8 +29,8 @@ Cryptography comes from the audited [noble](https://paulmillr.com/noble/) librar
 Requires Node 24 or newer.
 
 ```bash
-git clone https://github.com/Mojavechain/mojave
-cd mojave
+git clone https://github.com/MojaveL1/MojaveL1
+cd MojaveL1
 npm install
 npm start              # http://localhost:8266
 ```
@@ -55,7 +53,7 @@ npm test               # crypto: stealth scan, ML-KEM, range proofs, ring signat
 npm run test:e2e       # boots a node, mines, faucet → wallet scan → private send to a mjcq1 address → receiver finds it
 ```
 
-Both run on every push in GitHub Actions.
+Run both before you push.
 
 ## API
 
