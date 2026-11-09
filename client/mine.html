@@ -1,0 +1,48 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mojave Mining</title><meta name="description" content="Mine Mojavechain in your browser or from the command line. Argon2id proof of work, rewards paid to your own private address."><link rel="icon" href="/favicon.svg"><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css">
+<style>.big{font:500 44px var(--display);font-stretch:112%}#lb div{display:grid;grid-template-columns:60px 1fr 120px 160px;padding:9px 18px;border-top:1px solid var(--line);font:400 12px var(--mono)}#lb div.me{color:#ff3131}#log div{padding:9px 18px;border-bottom:1px solid var(--line);font:400 12px var(--mono)}input[type=range]{width:160px;accent-color:#ff3131}</style>
+<script type="importmap">{"imports":{
+  "@noble/curves/ed25519":"/vendor/curves/esm/ed25519.js",
+  "@noble/hashes/_assert":"/vendor/hashes/esm/_assert.js","@noble/hashes/hmac":"/vendor/hashes/esm/hmac.js","@noble/hashes/sha2":"/vendor/hashes/esm/sha2.js",
+  "@noble/hashes/sha3":"/vendor/hashes/esm/sha3.js","@noble/hashes/sha512":"/vendor/hashes/esm/sha512.js","@noble/hashes/utils":"/vendor/hashes/esm/utils.js",
+  "@noble/hashes/crypto":"/vendor/hashes/esm/crypto.js","@noble/hashes/sha256":"/vendor/hashes/esm/sha256.js","@noble/hashes/blake2s":"/vendor/hashes/esm/blake2s.js",
+  "@noble/post-quantum/ml-kem":"/vendor/post-quantum/esm/ml-kem.js"}}</script>
+</head><body>
+<main class="wrap app"><div class="pagehead"><h1>Mine Mojave</h1><span class="cap">open mining · argon2id · rewards to your address</span></div>
+  <p style="margin-top:18px">Mojavechain blocks are open to every miner. Your browser or CPU solves Argon2id, a memory-hard proof of work that favours ordinary computers over specialised hardware. When you find a block, the reward is paid straight to your own private address as a coinbase output only your wallet can spend.</p>
+  <div class="stats" style="margin-top:26px"><div><span>your hashrate</span><b id="hr">0 H/s</b></div><div><span>blocks you found</span><b id="mine">0</b></div><div><span>height · difficulty</span><b id="ht">–</b></div><div><span>block reward</span><b id="rw">–</b></div></div>
+  <div class="panel" style="margin-top:18px"><div class="hd"><span>browser miner</span><span id="st" class="dim">stopped</span></div><div style="padding:18px">
+    <label style="margin-top:0">pay rewards to (mjc1… or mjcq1…)</label><textarea id="addr" rows="2" placeholder="paste an address, or create one in the wallet"></textarea>
+    <div class="row" style="margin-top:14px;align-items:center"><button class="btn solid" id="go">start mining</button><span class="dim" style="font:400 11px var(--mono);letter-spacing:.12em;text-transform:uppercase">threads <b id="tn" style="color:var(--ice)"></b></span><input type="range" id="th" min="1"><a class="btn gh" href="/wallet">open wallet ↗</a></div>
+    <p class="dim" style="font-size:12px;margin-top:12px">Mining runs only while this tab is open. Coinbase rewards unlock after 3 confirmations and appear in your wallet after a rescan.</p></div></div>
+  <div class="panel" style="margin-top:18px"><div class="hd"><span>command-line miner</span><span>all cores · node 24+</span></div><div style="padding:18px">
+    <pre style="margin:0">git clone https://github.com/Mojavechain/mojave && cd mojave
+node miner/miner.js YOUR_MJC1_ADDRESS --threads 8</pre><p class="dim" style="font-size:12px;margin-top:12px">The miner fetches work from <code>GET /api/work?address=…</code> and submits solutions to <code>POST /api/work</code>. The node re-checks every hash before it accepts a block. Point <code>--node</code> at your own node to mine against it.</p></div></div>
+  <div class="panel" style="margin-top:18px"><div class="hd"><span>genesis leaderboard</span><span id="lbs">testnet miners</span></div>
+    <p class="dim" style="font-size:12px;padding:14px 18px 0">Every block a public miner finds is recorded against their payout address. Testnet miners on this board are rewarded at mainnet genesis. Addresses are shown as a fingerprint, never in full.</p>
+    <div id="you" style="padding:10px 18px 0;font:400 12px var(--mono)"></div><div id="lb" style="margin-top:10px"></div></div>
+  <div class="panel" style="margin-top:18px"><div class="hd"><span>activity</span><span>this session</span></div><div id="log"><div class="dim">not mining yet</div></div></div>
+</main>
+<script type="module">
+import { chrome, $, api, kyb, toast } from '/common.js'; import * as K from '/rct.js'; chrome();
+const cores = navigator.hardwareConcurrency || 4; $('th').max = cores; $('th').value = Math.max(1, Math.min(cores - 1, 4)); $('tn').textContent = $('th').value;
+try { const seed = localStorage.getItem('kyb_seed'); if (seed) $('addr').value = K.wallet(seed).address; } catch {}
+let W = [], job = null, run = false, rate = {}, found = 0, poll = 0;
+const log = (m) => { const l = $('log'); if (l.firstChild && l.firstChild.classList.contains('dim') && l.children.length === 1) l.innerHTML = ''; const d = document.createElement('div'); d.innerHTML = m; l.prepend(d); while (l.children.length > 30) l.lastChild.remove(); };
+async function work() { const j = await api('/api/work?address=' + encodeURIComponent($('addr').value.trim())); if (j.error) { toast(j.error, 1); stop(); return; }
+  $('ht').textContent = j.height + ' · ' + j.diff; $('rw').textContent = kyb(j.reward); if (!job || j.id !== job.id) { job = j; W.forEach((w) => w.postMessage({ job })); } }
+function spawn(n) { while (W.length < n) { const w = new Worker('/mine-worker.js'), k = W.length; w.onmessage = (e) => onMsg(k, e.data); if (job) w.postMessage({ job }); if (run) w.postMessage({ run: true }); W.push(w); }
+  while (W.length > n) { W.pop().terminate(); delete rate[W.length]; } }
+async function onMsg(k, d) { if (d.hashes != null) { rate[k] = d.hashes; $('hr').textContent = Object.values(rate).reduce((a, b) => a + b, 0) + ' H/s'; }
+  if (d.found) { const r = await api('/api/work', d.found); if (r.ok) { found++; $('mine').textContent = found; board(); log(`<span class="ac">★ block ${r.height} found</span> · reward paid to your address`); toast('block ' + r.height + ' found'); } else if (!/stale|expired/.test(r.error)) log('<span class="dim">' + r.error + '</span>'); job = null; work(); } }
+async function start() { try { K.parseAddress($('addr').value.trim()); } catch { return toast('paste a mjc1 or mjcq1 address first', 1); }
+  run = true; spawn(+$('th').value); await work(); W.forEach((w) => w.postMessage({ run: true })); poll = setInterval(work, 5000); $('go').textContent = 'stop mining'; $('st').innerHTML = '<span class="ac">mining</span>'; log('started with ' + W.length + ' threads'); }
+function stop() { run = false; W.forEach((w) => w.postMessage({ run: false })); clearInterval(poll); rate = {}; $('hr').textContent = '0 H/s'; $('go').textContent = 'start mining'; $('st').textContent = 'stopped'; }
+$('go').onclick = () => (run ? stop() : start()); $('th').oninput = () => { $('tn').textContent = $('th').value; if (run) spawn(+$('th').value); };
+async function board() { const a = $('addr').value.trim(), b = await api('/api/leaderboard' + (a ? '?address=' + encodeURIComponent(a) : ''));
+  $('lbs').textContent = b.miners + ' miners · ' + b.blocks + ' blocks';
+  $('you').innerHTML = b.you ? (b.you.blocks ? '<span class="ac">you: rank #' + b.you.rank + ' · ' + b.you.blocks + ' blocks</span> · id ' + b.you.id : '<span class="dim">you: no blocks yet · id ' + b.you.id + '</span>') : '';
+  $('lb').innerHTML = '<div class="dim"><span>rank</span><span>miner</span><span>blocks</span><span>first block</span></div>' + (b.top.length ? b.top.slice(0, 25).map((r) => '<div class="' + (b.you && r.id === b.you.id ? 'me' : '') + '"><span>#' + r.rank + '</span><span>' + r.id + '</span><span>' + r.blocks + '</span><span>' + r.first + '</span></div>').join('') : '<div class="dim"><span></span><span>be the first public miner</span></div>'); }
+board(); setInterval(board, 15000); $('addr').onchange = board;
+api('/api/stats').then((s) => { $('ht').textContent = s.height + ' · ' + s.diff; $('rw').textContent = kyb(s.reward); });
+</script></body></html>

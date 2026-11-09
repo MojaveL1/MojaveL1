@@ -1,0 +1,39 @@
+{
+  "name": "mojave-chain",
+  "version": "1.0.0",
+  "description": "Mojavechain ($MOJAVE): private money for the quantum era. Ring signatures, stealth addresses, hidden amounts, ML-KEM payment detection.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node test/crypto.test.js",
+    "test:e2e": "node test/run-e2e.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@noble/curves": "^1.4.2",
+    "@noble/hashes": "^1.4.0",
+    "@noble/post-quantum": "^0.2.1",
+    "hash-wasm": "4.12.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mojavechain/mojave"
+  },
+  "homepage": "https://mojavechain.org",
+  "keywords": [
+    "privacy",
+    "post-quantum",
+    "ml-kem",
+    "ring-signatures",
+    "ringct",
+    "stealth-addresses",
+    "pedersen",
+    "argon2id",
+    "proof-of-work",
+    "blockchain"
+  ]
+}

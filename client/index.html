@@ -1,0 +1,213 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mojavechain · private money for the quantum era</title>
+<meta name="description" content="Mojavechain ($MOJAVE): a private proof-of-work chain. Ring signatures, stealth addresses, hidden amounts, and ML-KEM-768 payment detection that a quantum computer cannot break.">
+<meta property="og:title" content="Mojavechain · private money for the quantum era"><meta property="og:image" content="/og.png"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css">
+<style>
+section{position:relative;padding:clamp(80px,10vw,140px) 0}
+.disp{font:500 clamp(36px,6.4vw,84px)/1 var(--display);font-stretch:118%;letter-spacing:-.025em;color:var(--head)}
+.spread{display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap}.spread .disp{white-space:nowrap}
+.labels{display:flex;align-items:center;gap:14px;margin-bottom:18px}.labels span{font:400 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--fog);white-space:nowrap}.labels i{flex:1;height:1px;background:var(--line)}
+.lead{max-width:560px;margin:34px auto 0;text-align:center;color:var(--fog);font-size:15px;line-height:1.7}.lead b{color:var(--ice);font-weight:400}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}.reveal.in{opacity:1;transform:none}
+/* hero */
+#top{height:100vh;min-height:620px;padding:0;position:sticky;top:0;z-index:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#field{position:absolute;inset:0;width:100%;height:100%}
+.hero-h{position:relative;text-align:center;font:500 clamp(42px,7vw,96px)/.98 var(--display);font-stretch:118%;letter-spacing:-.03em;color:var(--head);text-shadow:0 0 40px #0b0b0b,0 0 80px #0b0b0b,0 0 120px #0b0b0b;padding:0 20px}
+.hero-h b{font-weight:500;color:var(--hi)}
+.cue{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);width:22px;height:22px;border:1px solid var(--line2);border-radius:4px;display:flex;align-items:center;justify-content:center;font:10px var(--mono);color:var(--fog)}
+.over{position:relative;z-index:1;background:var(--void)}
+/* threat */
+.ledger{margin-top:56px;padding:22px 26px}
+.ledger .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.ledger .yr{font:500 34px var(--display);font-stretch:112%}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0}.cols>div{padding:8px 26px 8px 0}.cols>div+div{border-left:1px solid var(--line);padding:8px 0 8px 26px}
+.lrow{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.lrow span:last-child{font:400 12px var(--mono);color:var(--ice);transition:color .3s}
+.lrow span.open{color:var(--bad)}.lrow span.held{color:var(--hi)}
+.prim{display:grid;grid-template-columns:repeat(3,1fr) 1.2fr;margin-top:70px}.prim>div{padding:18px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-height:120px;display:flex;flex-direction:column;justify-content:space-between}
+.prim .ex{grid-row:span 2;border-right:0;align-items:center;justify-content:center;gap:24px;position:relative}.prim .ex .cap{position:absolute}.prim b{font-weight:500;font-size:14px}
+/* design cards */
+.mark{display:flex;gap:22px;align-items:flex-start}.mark h2{font:400 clamp(26px,3vw,38px)/1.2 var(--display);color:var(--fog);max-width:640px}.mark h2 b{color:var(--ice);font-weight:500}
+.cards{display:flex;gap:20px;overflow-x:auto;padding:46px 0 10px;scroll-snap-type:x mandatory;scrollbar-width:thin}
+.card{flex:0 0 300px;scroll-snap-align:start;padding:22px;min-height:300px;display:flex;flex-direction:column;justify-content:space-between;border-radius:4px;transition:border-color .3s,background .3s}.card:hover{border-color:var(--line2);background:var(--graphite)}
+.card h4{font:500 30px/1.05 var(--display);font-stretch:112%;margin-top:22px;color:var(--ice)}.card p{color:var(--fog);font-size:13px;line-height:1.6;margin-top:14px}.card .rep{font:400 11px var(--mono);color:var(--steel);border-top:1px solid var(--line);padding-top:12px;margin-top:18px}.card .rep b{color:var(--fog);font-weight:400}
+/* payments */
+.sheet{background:var(--carbon);border:1px solid var(--line);border-radius:24px;padding:clamp(28px,4vw,56px);margin:0 max(12px,1vw)}
+.gap-h{text-align:center}.pay{display:grid;grid-template-columns:420px 1fr;gap:60px;margin-top:60px;align-items:start}
+.onchain{position:sticky;top:110px;padding:22px}.onchain .lrow span:first-child{color:var(--fog)}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.chips span{font:400 11px var(--mono);border:1px solid var(--line2);border-radius:999px;padding:4px 10px;color:var(--fog)}
+.steps>div{padding:30px 0;border-bottom:1px solid var(--line)}.steps>div:first-child{padding-top:0}.steps h5{font:500 22px/1.25 var(--display);margin:10px 0}.steps p{color:var(--fog);font-size:14px;line-height:1.7;max-width:520px}
+/* compare */
+.cmp{display:grid;grid-template-columns:repeat(3,1fr);margin-top:56px}.cmp>div{padding:26px;border-right:1px solid var(--line)}.cmp>div:last-child{border-right:0}.cmp>div:first-child{background:var(--graphite)}
+.cmp h4{font:500 54px/1 var(--display);font-stretch:112%;margin:10px 0 8px}.cmp .k{border-top:1px solid var(--line);padding:12px 0}.cmp .k span{display:block;font:400 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--fog);margin-bottom:4px}.cmp .k b{font-weight:400;font-size:14px}
+.cmp>div:not(:first-child) h4{color:var(--steel)}
+/* sizes */
+.sizes{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:56px}.sizes>div{padding:22px;border-radius:14px;border:1px solid var(--line);background:var(--carbon)}.sizes b{display:block;font:500 42px/1 var(--display);font-stretch:112%;margin:14px 0 12px}.sizes p{color:var(--fog);font-size:13px;line-height:1.6}
+/* roadmap */
+.tline{display:grid;grid-template-columns:repeat(5,1fr);gap:24px;margin-top:56px;position:relative;padding-top:30px}.tline:before{content:'';position:absolute;top:4px;left:0;right:0;height:1px;background:var(--line2)}
+.tline>div{position:relative}.tline>div:before{content:'';position:absolute;top:-30px;left:0;width:7px;height:7px;background:var(--hi)}.tline .ph{display:flex;justify-content:space-between;font:400 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--fog);margin-bottom:10px}.tline .ph b{color:var(--ice);font-weight:400}
+.tline p{font-size:13px;color:var(--fog);line-height:1.6}.tline p strong{color:var(--ice);font-weight:500}
+/* faq */
+.faq{margin-top:56px;border-top:1px solid var(--line)}.faq>div{display:grid;grid-template-columns:1fr 1.3fr;gap:40px;padding:26px 0;border-bottom:1px solid var(--line)}.faq h5{font:500 19px/1.35 var(--display)}.faq p{color:var(--fog);font-size:14px;line-height:1.7}
+/* follow */
+.follow{min-height:720px;display:flex;align-items:center;overflow:hidden}#rays{position:absolute;inset:0;width:100%;height:100%}
+.follow .wrap{position:relative;display:grid;grid-template-columns:1fr 2fr 1fr;align-items:end;gap:20px;width:100%}
+.follow h2{font:500 clamp(40px,6vw,84px)/1 var(--display);font-stretch:118%;text-align:center;color:var(--ice);letter-spacing:-.02em}
+.follow .side a{display:inline-block;margin-right:16px;font-size:13px}.follow .side p{font:400 12px var(--mono);color:var(--fog);margin-top:6px}
+@media(max-width:900px){.cols{grid-template-columns:1fr}.cols>div+div{border-left:0;border-top:1px solid var(--line);padding:16px 0 0}.prim{grid-template-columns:1fr 1fr}.prim .ex{grid-column:span 2;grid-row:auto;min-height:150px}
+  .pay{grid-template-columns:1fr}.onchain{position:relative;top:0}.cmp{grid-template-columns:1fr}.cmp>div{border-right:0;border-bottom:1px solid var(--line)}.sizes{grid-template-columns:1fr 1fr}.tline{grid-template-columns:1fr;padding-top:0}.tline:before,.tline>div:before{display:none}
+  .faq>div{grid-template-columns:1fr;gap:10px}.follow .wrap{grid-template-columns:1fr;text-align:center}.spread .disp{white-space:normal}}
+</style></head><body>
+<section id="top"><canvas id="field"></canvas><h1 class="hero-h">Private today.<br><b>Private after</b><br>quantum.</h1><a class="cue" href="#threat">↓</a></section>
+
+<div class="over">
+<section id="threat"><div class="wrap">
+  <div class="labels reveal"><span>what</span><i></i><span>happens</span><i></i><span>after</span><i></i><span>q-day</span></div>
+  <div class="spread reveal"><span class="disp">Record.</span><span class="disp">Wait.</span><span class="disp">Decrypt.</span></div>
+  <p class="lead reveal">Every blockchain is a permanent public copy. Anyone can store every transaction today and wait for a quantum computer that runs Shor's algorithm. On that day, the elliptic-curve keys that hide receivers and amounts in today's privacy coins <b>stop hiding anything that was ever recorded.</b></p>
+  <div class="frame ledger reveal"><div class="top"><span class="cap">● <span id="phase">record</span>.</span><span class="yr" id="yr">2026</span></div>
+    <div class="cols"><div><div class="cap" style="margin-bottom:8px">a classic privacy coin</div><div id="colA"></div><div class="cap" style="margin-top:12px" id="noteA">copied and kept</div></div>
+    <div><div class="cap" style="margin-bottom:8px">mojave · mjcq1 address</div><div id="colB"></div><div class="cap" style="margin-top:12px" id="noteB">copied and kept</div></div></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="pbtn" id="replay">replay ↺</button></div></div>
+  <div class="prim frame reveal">
+    <div><b>Stealth addresses</b><span class="cap">ECDH</span></div><div><b>Amount encryption</b><span class="cap">ECDH-derived keys</span></div><div><b>Key images</b><span class="cap">discrete log</span></div>
+    <div class="ex"><span class="cap" style="top:16px;right:18px">past</span><a class="pbtn" href="#design">see the design →</a><span class="cap" style="bottom:16px;left:18px">payments</span><span class="cap" style="bottom:16px;right:18px">exposed</span></div>
+    <div><b>Value commitments</b><span class="cap">pedersen</span></div><div><b>Ring signatures</b><span class="cap">discrete log</span></div><div><b>Signatures</b><span class="cap">ed25519</span></div>
+  </div>
+  <p class="lead reveal">A hard fork can patch a bug. It cannot unpublish a ledger. That's why <b>payments to a Mojave mjcq1 address are sealed with lattices today</b>, and Faraday moves spends to hash-based proofs next.</p>
+</div></section>
+
+<section id="design"><div class="wrap">
+  <div class="labels reveal"><span>inside</span><i></i><span>the</span><i></i><span>private</span><i></i><span>chain</span></div>
+  <div class="mark reveal"><span id="bigmark"></span><h2>Meet the primitives that hide <b>every sender</b>, <b>every receiver</b> and <b>every amount</b>:</h2></div>
+  <div class="cards">
+    <div class="card frame"><span class="cap">sender</span><div><h4>Ring of 16</h4><p>Each input signs alongside 15 decoys drawn from the chain. An MLSAG signature proves one of them is yours, never which.</p></div><div class="rep">replaces <b>a public "from" field</b></div></div>
+    <div class="card frame"><span class="cap">receiver</span><div><h4>ML-KEM-768</h4><p>Quantum addresses carry a lattice public key. Senders encapsulate a fresh secret per payment; only the receiver can decapsulate it.</p></div><div class="rep">replaces <b>elliptic-curve Diffie-Hellman</b></div></div>
+    <div class="card frame"><span class="cap">receiver</span><div><h4>One-time addresses</h4><p>Every output lands at a key derived for that payment alone. Two payments to one wallet look unrelated.</p></div><div class="rep">replaces <b>a reusable address</b></div></div>
+    <div class="card frame"><span class="cap">amount</span><div><h4>Pedersen + range proofs</h4><p>Amounts are commitments. 48-bit range proofs stop negative values, and inputs balance outputs as curve points.</p></div><div class="rep">replaces <b>a public amount</b></div></div>
+    <div class="card frame"><span class="cap">double spend</span><div><h4>Key images</h4><p>One output always yields the same key image, so a second spend is refused, yet nothing links the image to the output.</p></div><div class="rep">replaces <b>a public "spent" flag</b></div></div>
+    <div class="card frame"><span class="cap">consensus</span><div><h4>Argon2id PoW</h4><p>Memory-hard proof of work. Ordinary CPUs stay competitive and nobody signs a block, so there's no block key to forge.</p></div><div class="rep">replaces <b>validator signatures</b></div></div>
+    <div class="card frame"><span class="cap">next · faraday</span><div><h4>Hash-based spends</h4><p>Spend proofs move off elliptic curves and every spend hides in the whole chain instead of 16 outputs.</p></div><div class="rep">replaces <b>discrete-log ring signatures</b></div></div>
+  </div>
+</div></section>
+
+<section id="payments"><div class="sheet">
+  <div class="labels reveal"><span>how</span><i></i><span>a</span><i></i><span>payment</span><i></i><span>works</span></div>
+  <h2 class="disp gap-h reveal">On chain, a payment is a gap.</h2>
+  <p class="lead reveal">A Mojave transaction proves that value moved without saying who sent it, who received it, or how much. Open any transaction in the explorer and press <b>verify in your browser</b> to check the proof yourself. This is what a wallet does to make one, and what the chain keeps. <b>The panel shows the latest private transaction on the live testnet.</b></p>
+  <div class="pay">
+    <div class="frame onchain reveal"><div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="cap">on chain</span><a class="pbtn" id="txlink" style="padding:5px 10px" href="/explorer">live</a></div><div id="oc"></div>
+      <div class="cap" style="margin-top:22px">never on chain</div><div class="chips"><span>sender</span><span>receiver</span><span>amount</span><span>which output was spent</span></div></div>
+    <div class="steps">
+      <div class="reveal"><span class="cap">● 01 · share an address</span><h5>The receiver hands over a quantum address</h5><p>A mjcq1 address carries the spend key, the view key and an ML-KEM-768 public key. At about 1,700 characters it's long, so wallets copy it whole.</p></div>
+      <div class="reveal"><span class="cap">● 02 · derive a one-time address</span><h5>The sender's wallet makes a fresh secret</h5><p>It encapsulates a shared secret to the receiver's ML-KEM key. From that secret it derives a one-time address and a blinding key no one else can compute.</p></div>
+      <div class="reveal"><span class="cap">● 03 · seal the amount</span><h5>The amount becomes a commitment</h5><p>The value is hidden in a Pedersen commitment, encrypted to the receiver, and backed by a 48-bit range proof so nobody can mint coins from a negative amount.</p></div>
+      <div class="reveal"><span class="cap">● 04 · sign with sixteen</span><h5>The wallet signs inside a ring</h5><p>It picks 15 decoys from the chain, builds an MLSAG signature over all 16 and publishes a key image. All of this happens in your browser.</p></div>
+      <div class="reveal"><span class="cap">● 05 · mine and scan</span><h5>One key opens one output</h5><p>Nodes check the ring, the range proofs, the balance and the key image, and Argon2id miners seal it in a block. The receiver's wallet tries its keys on each new output. One opens.</p></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="compare"><div class="wrap">
+  <div class="labels reveal"><span>same</span><i></i><span>goal</span><i></i><span>as</span><i></i><span>zec and xmr</span></div>
+  <div class="spread reveal"><span class="disp">Same goal.</span><span class="disp">Different math.</span></div>
+  <p class="lead reveal">Three private designs and one question that matters once the ledger has been copied: <b>does what was recorded stay private?</b></p>
+  <div class="cmp frame reveal">
+    <div><span class="cap">${MARK} mojave · mjcq1</span><h4>Holds</h4><span class="cap">receiver + amount after q-day</span><div class="k" style="margin-top:18px"><span>privacy</span><b>Every transaction private</b></div><div class="k"><span>payment detection</span><b>ML-KEM-768, lattices</b></div><div class="k"><span>spends rely on</span><b>Ring of 16 today, hash-based at Faraday</b></div><div class="k"><span>trusted setup</span><b>None</b></div></div>
+    <div><span class="cap">zcash</span><h4>At risk</h4><span class="cap">receiver + amount after q-day</span><div class="k" style="margin-top:18px"><span>privacy</span><b>Optional shielded pools</b></div><div class="k"><span>payment detection</span><b>Elliptic-curve Diffie-Hellman</b></div><div class="k"><span>spends rely on</span><b>Discrete log, Halo 2</b></div><div class="k"><span>trusted setup</span><b>None for Orchard</b></div></div>
+    <div><span class="cap">monero</span><h4>At risk</h4><span class="cap">receiver + amount after q-day</span><div class="k" style="margin-top:18px"><span>privacy</span><b>Private by default</b></div><div class="k"><span>payment detection</span><b>Elliptic-curve Diffie-Hellman</b></div><div class="k"><span>spends rely on</span><b>Discrete log, ring of 16</b></div><div class="k"><span>trusted setup</span><b>None</b></div></div>
+  </div>
+</div></section>
+
+<section id="sizes"><div class="wrap">
+  <div class="labels reveal"><span>sizes</span><i></i><span>we</span><i></i><span>measure</span><i></i><span>live</span></div>
+  <div class="spread reveal"><span class="disp">Lasting privacy</span><span class="disp">has a size.</span></div>
+  <p class="lead reveal">Post-quantum parts are bigger than the elliptic-curve parts they replace. These are Mojave's real numbers, measured on the running testnet.</p>
+  <div class="sizes reveal">
+    <div><span class="cap">per transaction · measured</span><b id="zTx">~32 KB</b><p>Ring signature, two outputs, two 48-bit range proofs and one ML-KEM ciphertext.</p></div>
+    <div><span class="cap">per quantum output</span><b>1,088 B</b><p>The ML-KEM-768 ciphertext that rides with every payment to a mjcq1 address.</p></div>
+    <div><span class="cap">per quantum address</span><b>~1,715</b><p>Characters in a mjcq1 address. The ML-KEM-768 key alone is 1,184 bytes.</p></div>
+    <div><span class="cap">trusted setups</span><b>0</b><p>No ceremony and no secret anyone had to destroy. Every proof checks against public math.</p></div>
+  </div>
+</div></section>
+
+<section id="roadmap"><div class="wrap">
+  <div class="labels reveal"><span>from</span><i></i><span>testnet</span><i></i><span>to</span><i></i><span>faraday</span></div>
+  <div class="spread reveal"><span class="disp">The</span><span class="disp">roadmap.</span></div>
+  <div class="tline reveal">
+    <div><div class="ph"><b>phase 1</b><span>live</span></div><p><strong>Private testnet.</strong> Ring signatures, stealth outputs, range proofs, ML-KEM quantum addresses, explorer, browser wallet, faucet.</p></div>
+    <div><div class="ph"><b>phase 2</b><span>now</span></div><p><strong>$MOJAVE.</strong> The token launches on Solana and carries the project to mainnet.</p></div>
+    <div><div class="ph"><b>phase 3</b><span>live</span></div><p><strong>Open mining.</strong> Anyone can mine blocks in the browser at <a href="/mine">/mine</a> or with the CLI miner, rewards paid to their own private address.</p></div>
+    <div><div class="ph"><b>phase 4</b><span>planned</span></div><p><strong>Faraday.</strong> Hash-based spend proofs and full-chain anonymity, specified, tested and reviewed in the open.</p></div>
+    <div><div class="ph"><b>phase 5</b><span>after review</span></div><p><strong>Mainnet.</strong> Genesis of the main chain with Faraday on from block 1.</p></div>
+  </div>
+  <div class="row reveal" style="justify-content:center;margin-top:46px"><a class="pbtn" href="/docs">read the docs ↗</a><a class="pbtn" href="/explorer">open explorer ↗</a></div>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <div class="labels reveal"><span>things</span><i></i><span>people</span><i></i><span>keep</span><i></i><span>asking</span></div>
+  <div class="spread reveal"><span class="disp">Questions.</span><span class="disp">Answers.</span></div>
+  <div class="faq">
+    <div class="reveal"><h5>Is the testnet actually private?</h5><p>Yes. Every transaction on the live testnet uses a real ring of 16, real one-time addresses, real Pedersen commitments with range proofs and, for mjcq1 addresses, real ML-KEM-768. Open the explorer: there are no senders, receivers or amounts to read. Every transaction has a <b>verify in your browser</b> button that re-checks its ring signatures, range proofs and balance on your own machine, and the code and test suite are public on GitHub.</p></div>
+    <div class="reveal"><h5>Why keep ring signatures if they use elliptic curves?</h5><p>They are fast and well studied today. A quantum computer that could break them does not exist yet, but recorded receivers and amounts are the part that leaks backwards in time, so Mojave seals those with ML-KEM first. Faraday replaces the ring with hash-based proofs.</p></div>
+    <div class="reveal"><h5>Where are my keys?</h5><p>In your browser. The wallet creates a 32-byte seed on your device and derives the spend key, view key and ML-KEM key from it. The node never sees them. Back up the seed.</p></div>
+    <div class="reveal"><h5>What is the difference between tMOJAVE and $MOJAVE?</h5><p>tMOJAVE is the testnet coin from the faucet and has no value. $MOJAVE is the Solana token that funds the work and carries the project to mainnet.</p></div>
+    <div class="reveal"><h5>Can I run a node?</h5><p>Yes. The node, explorer and wallet are one open-source Node.js program. Clone the repository, run npm install and npm start, and you have the full chain on your machine.</p></div>
+    <div class="reveal"><h5>When does mainnet launch?</h5><p>After Faraday is specified, tested and reviewed in the open. Follow @MojavechainL1 for dates.</p></div>
+  </div>
+</div></section>
+
+<section class="follow"><canvas id="rays"></canvas><div class="wrap">
+  <div class="side"><div class="cap" style="margin-bottom:8px">follow us</div><a href="https://github.com/Mojavechain/mojave" target="_blank" rel="noopener">GitHub</a><a href="https://x.com/MojavechainL1" target="_blank" rel="noopener">X</a></div>
+  <div style="text-align:center"><div class="cap" style="margin-bottom:14px">● testnet live · block <span id="fH">…</span></div><h2>Follow the build</h2><div class="row" style="justify-content:center;margin-top:26px"><a class="pbtn" href="/wallet">open the wallet ↗</a><div class="ca" id="ca"></div></div></div>
+  <div class="side" style="text-align:right"><div class="cap" style="margin-bottom:8px">specification</div><p>Protocol, API and FAQ in the docs. The code is public.</p></div>
+</div></section>
+</div>
+
+<script type="module">
+import { chrome, LANDING, MARK, caBar, $, api, short } from '/common.js';
+const nav = chrome(LANDING, ['/explorer', 'explorer ↗']); $('bigmark').innerHTML = MARK(54);
+document.querySelectorAll('.cmp .cap').forEach((c) => (c.innerHTML = c.innerHTML.replace('${MARK}', MARK(12))));
+// scroll reveal + nav state
+const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add('in')), { threshold: 0.12 }); document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+const secs = ['top', 'threat', 'design', 'payments', 'compare', 'roadmap'];
+addEventListener('scroll', () => { const y = scrollY + innerHeight * 0.35; let cur = 'top'; for (const s of secs) if ($(s).offsetTop <= y) cur = s; nav.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === '/#' + cur));
+  $('top').style.opacity = Math.max(0, 1 - scrollY / (innerHeight * 0.9)); }, { passive: true });
+
+// hero: drifting stipple field (value noise thresholded into dots)
+const cv = $('field'), g = cv.getContext('2d'); let W, H, dpr = Math.min(2, devicePixelRatio || 1);
+const fit = () => { W = cv.offsetWidth; H = cv.offsetHeight; cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }; fit(); addEventListener('resize', fit);
+const P = new Uint8Array(512); for (let i = 0; i < 256; i++) P[i] = i; for (let i = 255; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [P[i], P[j]] = [P[j], P[i]]; } for (let i = 0; i < 256; i++) P[i + 256] = P[i];
+const fade = (t) => t * t * (3 - 2 * t), lerp = (a, b, t) => a + (b - a) * t, hv = (x, y) => P[P[x & 255] + (y & 255)] / 255;
+const noise = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi; return lerp(lerp(hv(xi, yi), hv(xi + 1, yi), fade(xf)), lerp(hv(xi, yi + 1), hv(xi + 1, yi + 1), fade(xf)), fade(yf)); };
+let t0 = performance.now(); const STEP = 5;
+(function draw(now) { const t = (now - t0) / 1000; g.clearRect(0, 0, W, H); g.fillStyle = '#ff3131';
+  if (scrollY < innerHeight) for (let y = 0; y < H; y += STEP) for (let x = 0; x < W; x += STEP) {
+    // big soft blobs, kept away from the headline, filled with a random speckle that thickens toward each blob's core
+    const n = noise(x / 250 + t * 0.04, y / 250 - t * 0.025) * 0.75 + noise(x / 70 - t * 0.06, y / 70) * 0.25, cx = (x - W / 2) / W, cy = (y - H / 2) / H, d = n - 0.56 - Math.max(0, 0.3 - Math.hypot(cx * 1.3, cy * 1.8)) * 1.3;
+    const r = ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1 + 1) % 1;
+    if (d > 0 && r < Math.min(0.92, d * 10)) { g.globalAlpha = 0.6 + r * 0.4; g.fillRect(x + (r - 0.5) * 4, y + (((r * 7) % 1) - 0.5) * 4, 1.8, 1.8); } }
+  g.globalAlpha = 1; requestAnimationFrame(draw); })(t0);
+
+// threat ledger: record → wait → decrypt
+const A = [['receiver', 'wallet 7f3a… · linked'], ['amount', '1,250.00'], ['sender', 'ring of 16 · decoys'], ['memo', 'invoice #4410']], hex = () => Array.from({ length: 4 }, () => Math.random().toString(16).slice(2, 6)).join(' ');
+const cell = (rows, open) => rows.map(([k, v], i) => `<div class="lrow"><span>${k}</span><span class="${open[i] || ''}" data-i="${i}">${hex()}</span></div>`).join('');
+let timer; function play() { clearInterval(timer); let yr = 2026, ph = 0; $('colA').innerHTML = cell(A, []); $('colB').innerHTML = cell(A, []); $('noteA').textContent = $('noteB').textContent = 'copied and kept';
+  timer = setInterval(() => { if (yr < 2036) { yr++; $('yr').textContent = yr; $('phase').textContent = 'wait'; document.querySelectorAll('#colA span[data-i],#colB span[data-i]').forEach((s) => (s.textContent = hex())); return; }
+    clearInterval(timer); $('phase').textContent = 'decrypt';
+    A.forEach(([, v], i) => { const s = $('colA').querySelector(`[data-i="${i}"]`); if (i === 2) { s.textContent = 'curves broken · narrowed'; s.className = 'open'; } else { s.textContent = v; s.className = 'open'; } });
+    ['sealed · ML-KEM-768', 'sealed · commitment', 'ring of 16 · faraday next', 'sealed · ML-KEM-768'].forEach((v, i) => { const s = $('colB').querySelector(`[data-i="${i}"]`); s.textContent = v; s.className = 'held'; });
+    $('noteA').textContent = 'every past payment exposed'; $('noteB').textContent = 'what was recorded stays sealed'; }, 420); }
+const lio = new IntersectionObserver((es) => { if (es[0].isIntersecting) { play(); lio.disconnect(); } }, { threshold: 0.5 }); lio.observe(document.querySelector('.ledger')); $('replay').onclick = play;
+
+// live chain data
+async function live() { try { const [s, t] = await Promise.all([api('/api/stats'), api('/api/txs')]); $('fH').textContent = s.height.toLocaleString(); caBar($('ca'), s.mint);
+  const pick = t.recent.find((x) => x.quantum) || t.recent[0]; if (!pick) return; const d = await api('/api/tx/' + pick.id); $('zTx').textContent = '~' + Math.round(d.size / 1024) + ' KB';
+  const q = d.vout.find((o) => o.quantum); $('txlink').href = '/explorer#/tx/' + d.id; $('txlink').textContent = 'block ' + d.h + ' ↗';
+  $('oc').innerHTML = [['key image', short(d.vin[0].ki, 6)], ['ring', d.vin[0].ring.length + ' outputs'], ['one-time address', short(d.vout[0].P, 6)], ['commitment', short(d.vout[0].C, 6)], ['KEM ciphertext', q ? q.ctBytes.toLocaleString() + ' bytes' : 'classic output'], ['range proof', '48-bit'], ['fee', 'public']].map(([k, v]) => `<div class="lrow"><span>${k}</span><span>${v}</span></div>`).join(''); } catch {} }
+live(); setInterval(live, 20000);
+
+// footer rays
+const rc = $('rays'), rg = rc.getContext('2d'); const rays = Array.from({ length: 22 }, (_, i) => ({ a: (i / 22) * Math.PI * 2 + Math.random() * 0.2, r0: 0.28 + Math.random() * 0.12, len: 0.18 + Math.random() * 0.25 }));
+(function ray(now) { const w = rc.width = rc.offsetWidth, h = rc.height = rc.offsetHeight, cx = w / 2, cy = h / 2, R = Math.max(w, h), t = now / 9000; rg.strokeStyle = 'rgba(255,49,49,.6)'; rg.lineWidth = 1.4;
+  for (const r of rays) { const a = r.a + t * 0.15; rg.beginPath(); rg.moveTo(cx + Math.cos(a) * R * r.r0, cy + Math.sin(a) * R * r.r0 * 0.7); rg.lineTo(cx + Math.cos(a) * R * (r.r0 + r.len), cy + Math.sin(a) * R * (r.r0 + r.len) * 0.7); rg.stroke(); }
+  setTimeout(() => requestAnimationFrame(ray), 60); })(0);
+</script></body></html>

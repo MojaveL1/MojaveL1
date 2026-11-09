@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mojave Explorer</title><link rel="icon" href="/favicon.svg"><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css">
+<style>.srch{display:flex;gap:10px;margin:34px 0 22px}.srch input{flex:1}.kv td:first-child{width:170px}.ring{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:8px}.ring a{border:1px solid var(--line2);padding:6px;text-align:center;font-size:12px}.ring a:hover{border-color:var(--ac)}
+@media(max-width:760px){.ring{grid-template-columns:repeat(4,1fr)}}.vrow{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font:400 13px var(--mono)}</style>
+<script type="importmap">{"imports":{
+  "@noble/curves/ed25519":"/vendor/curves/esm/ed25519.js",
+  "@noble/hashes/_assert":"/vendor/hashes/esm/_assert.js","@noble/hashes/hmac":"/vendor/hashes/esm/hmac.js","@noble/hashes/sha2":"/vendor/hashes/esm/sha2.js",
+  "@noble/hashes/sha3":"/vendor/hashes/esm/sha3.js","@noble/hashes/sha512":"/vendor/hashes/esm/sha512.js","@noble/hashes/utils":"/vendor/hashes/esm/utils.js",
+  "@noble/hashes/crypto":"/vendor/hashes/esm/crypto.js","@noble/hashes/sha256":"/vendor/hashes/esm/sha256.js","@noble/hashes/blake2s":"/vendor/hashes/esm/blake2s.js",
+  "@noble/post-quantum/ml-kem":"/vendor/post-quantum/esm/ml-kem.js"}}</script></head><body>
+<main class="wrap app"><div class="pagehead"><h1>Explorer</h1><span class="cap">mojave testnet · every transaction private</span></div>
+  <form class="srch" id="sf" style="margin:0 0 22px"><input id="q" placeholder="block height, block hash, tx id or key image" autocomplete="off"><button class="btn solid">search</button></form>
+  <div id="view"></div>
+</main>
+<script type="module">
+import { chrome, $, api, kyb, short, ago, toast } from '/common.js'; chrome();
+const V = $('view'); let timer;
+$('sf').onsubmit = async (e) => { e.preventDefault(); const r = await api('/api/search?q=' + encodeURIComponent($('q').value.trim())); if (r.error) return toast(r.error, true); location.hash = '#/' + r.type + '/' + r.id; };
+const tags = (t) => (t.coinbase ? '<span class="tag ac">coinbase</span>' : '<span class="tag">ring 16</span>') + (t.quantum ? ` <span class="tag q">ML-KEM ×${t.quantum}</span>` : '');
+async function home() {
+  const [s, b, t] = await Promise.all([api('/api/stats'), api('/api/blocks?limit=12'), api('/api/txs')]);
+  V.innerHTML = `<div class="stats"><div><span>HEIGHT</span><b>${s.height.toLocaleString()}</b></div><div><span>DIFFICULTY</span><b>${s.diff.toLocaleString()}</b></div><div><span>BLOCK TIME</span><b>${s.blockTime}s</b></div><div><span>HASHRATE</span><b>${s.hashrate} H/s</b></div>
+    <div><span>OUTPUTS</span><b>${s.outputs.toLocaleString()}</b></div><div><span>KEY IMAGES</span><b>${s.keyImages.toLocaleString()}</b></div><div><span>QUANTUM OUTPUTS</span><b class="q">${s.quantumOutputs.toLocaleString()}</b></div><div><span>EMITTED</span><b>${kyb(s.emitted)}</b></div></div>
+    <div class="grid2" style="margin-top:18px"><div class="panel"><div class="hd"><span>latest blocks</span><span>${s.pow}</span></div><div class="list">${b.map((x) => `<a href="#/block/${x.height}"><span class="h">${x.height}</span><span class="mono-trunc">${x.hash}</span><span class="dim">${x.txs} tx · ${ago(x.ts)}</span></a>`).join('')}</div></div>
+    <div class="panel"><div class="hd"><span>private transactions</span><span>${t.mempool.length} in mempool</span></div><div class="list">${t.mempool.map((x) => `<a href="#/tx/${x.id}"><span class="tag">pending</span><span class="mono-trunc">${x.id}</span><span>${x.quantum ? '<span class="tag q">ML-KEM</span>' : ''}</span></a>`).join('')}${t.recent.map((x) => `<a href="#/tx/${x.id}"><span class="h">${x.h}</span><span class="mono-trunc">${x.id}</span><span>${tags(x)}</span></a>`).join('') || '<div class="it dim">waiting for the first private transaction</div>'}</div></div></div>`;
+}
+async function block(id) { const b = await api('/api/block/' + id); if (b.error) return (V.innerHTML = `<p class="dim">${b.error}</p>`);
+  V.innerHTML = `<h3>block ${b.height}</h3><div class="tbl kv"><table>
+    <tr><td>hash</td><td>${b.hash}</td></tr><tr><td>previous</td><td><a href="#/block/${b.height - 1}">${b.prev}</a></td></tr><tr><td>time</td><td>${new Date(b.ts).toISOString().replace('T', ' ').slice(0, 19)} UTC · ${ago(b.ts)}</td></tr>
+    <tr><td>difficulty</td><td>${b.diff}</td></tr><tr><td>nonce</td><td>${b.nonce}</td></tr><tr><td>argon2id pow</td><td>${b.pow}</td></tr><tr><td>reward</td><td>${kyb(b.reward)} tMOJAVE + ${kyb(b.fees)} fees</td></tr><tr><td>size</td><td>${(b.size / 1024).toFixed(1)} KB</td></tr></table></div>
+    <div class="panel" style="margin-top:18px"><div class="hd">${b.tx.length} transactions</div><div class="list">${b.tx.map((x) => `<a href="#/tx/${x.id}"><span>${x.coinbase ? 'coinbase' : x.ins + ' in · ' + x.outs + ' out'}</span><span class="mono-trunc">${x.id}</span><span>${tags(x)}</span></a>`).join('')}</div></div>
+    <div class="row" style="margin-top:18px"><a class="btn gh" href="#/block/${b.height - 1}">← ${b.height - 1}</a><a class="btn gh" href="#/block/${b.height + 1}">${b.height + 1} →</a></div>`; }
+async function tx(id) { const t = await api('/api/tx/' + id); if (t.error) return (V.innerHTML = `<p class="dim">${t.error}</p>`);
+  V.innerHTML = `<h3>${t.coinbase ? 'coinbase' : 'private transaction'}</h3>${t.coinbase ? '' : `<div class="panel" style="margin-bottom:18px"><div class="hd"><span>don't trust the node · verify it yourself</span><button class="btn solid" id="vf" style="padding:7px 12px">verify in your browser</button></div><div style="padding:6px 18px 14px" id="vout"><p class="dim" style="font-size:13px;padding-top:8px">Your browser downloads this transaction and its 16-member rings, then re-checks every ring signature, every 48-bit range proof and the amount balance with the same open-source code the node runs.</p></div></div>`}<div class="tbl kv"><table><tr><td>tx id</td><td>${t.id}</td></tr>
+    <tr><td>block</td><td>${t.h != null ? `<a href="#/block/${t.h}">${t.h}</a> · ${t.confirmations} confirmations` : '<span class="ac">in mempool</span>'}</td></tr>
+    <tr><td>fee</td><td>${kyb(t.fee)} tMOJAVE</td></tr><tr><td>tx public key R</td><td>${t.R}</td></tr><tr><td>size</td><td>${(t.size / 1024).toFixed(1)} KB</td></tr>
+    <tr><td>sender</td><td>${t.coinbase ? 'miner' : '<span class="ac">hidden in a ring of 16</span>'}</td></tr><tr><td>receivers</td><td><span class="ac">one-time stealth outputs</span></td></tr><tr><td>amounts</td><td>${t.coinbase ? 'public (block reward)' : '<span class="ac">sealed in Pedersen commitments</span>'}</td></tr></table></div>
+    ${t.vin.map((v, k) => `<div class="panel" style="margin-top:18px"><div class="hd"><span>input ${k} · ring of ${v.ring.length}</span><span>MLSAG ${v.sig ? '· ' + v.sig.r + ' responses' : '(pruned)'}</span></div><div style="padding:14px 16px;font-size:13px">
+      <div class="dim">key image</div><div style="word-break:break-all">${v.ki}</div><div class="dim" style="margin-top:10px">pseudo-output commitment</div><div style="word-break:break-all">${v.pseudo}</div>
+      <div class="dim" style="margin-top:10px">ring members (global output index): one of these is the real spend</div><div class="ring">${v.ring.map((g) => `<a>#${g}</a>`).join('')}</div></div></div>`).join('')}
+    ${t.vout.map((o, k) => `<div class="panel" style="margin-top:18px"><div class="hd"><span>output ${k}${o.quantum ? ' · <span class="q">ML-KEM-768</span>' : ''}</span><span>${o.amount != null ? kyb(o.amount) + ' tMOJAVE' : o.rangeBits ? o.rangeBits + '-bit range proof' : ''}</span></div><div style="padding:14px 16px;font-size:13px">
+      <div class="dim">one-time address P</div><div style="word-break:break-all">${o.P}</div><div class="dim" style="margin-top:10px">amount commitment C</div><div style="word-break:break-all">${o.C}</div>
+      ${o.quantum ? `<div class="dim" style="margin-top:10px">ML-KEM ciphertext (${o.ctBytes} bytes)</div><div class="q" style="word-break:break-all">${o.ct}…</div>` : ''}</div></div>`).join('')}`; }
+async function verify(id) { const O = $('vout'), b = $('vf'); b.disabled = true; O.innerHTML = '<div class="vrow"><span>loading the crypto library</span><span>…</span></div>';
+  const K = await import('/rct.js'), r = await api('/api/rawtx/' + id); if (r.pruned) { O.innerHTML = '<div class="vrow"><span>old transaction: signatures pruned from this node</span><span>skip</span></div>'; return; }
+  const { tx, ring } = r, rows = [], t0 = performance.now(), row = (k, ok, v) => rows.push(`<div class="vrow"><span>${k}</span><span class="${ok ? 'ac' : 'bad'}">${ok ? '✓ ' : '✕ '}${v}</span></div>`);
+  await new Promise((z) => setTimeout(z, 30)); const err = K.verifyTx(tx, (g) => ring[g], () => false);
+  row('rings', true, tx.vin.length + ' × 16 members'); row('ring signatures (MLSAG)', !err || !/ring/.test(err), tx.vin.length + ' valid'); row('range proofs', !err || !/range/.test(err), tx.vout.length + ' × 48-bit'); row('inputs = outputs + fee', !err || !/balance/.test(err), 'balanced as curve points'); row('quantum outputs (ML-KEM-768)', true, tx.vout.filter((o) => o.ct).length + (tx.vout.filter((o) => o.ct).length === 1 ? ' ciphertext' : ' ciphertexts'));
+  rows.push(`<div class="vrow" style="border:0"><span>${err ? 'verification failed: ' + err : 'valid. checked locally in ' + ((performance.now() - t0) / 1000).toFixed(1) + 's'}</span><span class="${err ? 'bad' : 'ac'}">${err ? '✕' : '✓ verified'}</span></div>`); O.innerHTML = rows.join(''); b.disabled = false; }
+async function route() { clearInterval(timer); const [, type, id] = location.hash.split('/'); window.scrollTo(0, 0);
+  if (type === 'block') return block(id); if (type === 'tx') { await tx(id); const b = $('vf'); if (b) b.onclick = () => verify(id); return; } await home(); timer = setInterval(home, 6000); }
+addEventListener('hashchange', route); route();
+</script></body></html>
