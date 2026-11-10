@@ -17,8 +17,16 @@ http.createServer((req, res) => {
   }
 
   const file = path.resolve(SITE, '.' + (u === '/' ? '/index.html' : u));
-  const inside = file.startsWith(SITE) && fs.existsSync(file) && fs.statSync(file).isFile();
-  const target = inside ? file : path.join(SITE, '404.html');
-  res.writeHead(inside ? 200 : 404, { 'content-type': TYPES[path.extname(target)] || 'application/octet-stream', 'cache-control': 'no-store' });
-  fs.createReadStream(target).pipe(res);
+  if (file.startsWith(SITE) && fs.existsSync(file) && fs.statSync(file).isFile()) {
+    res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
+    fs.createReadStream(file).pipe(res); return;
+  }
+
+  // anything that is not a site file belongs to the node: /wallet, /explorer, /docs, /whitepaper
+  const up = http.request(API + req.url, { method: req.method }, (r) => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
+  up.on('error', () => {
+    res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' });
+    fs.createReadStream(path.join(SITE, '404.html')).pipe(res);
+  });
+  req.pipe(up);
 }).listen(PORT, () => console.log('site on http://localhost:' + PORT + ' (api ' + API + ')'));
