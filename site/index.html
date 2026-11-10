@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mojavechain: private money for the quantum era</title>
+<meta name="description" content="A proof of work chain where every transaction hides its sender, receiver and amount, and payments to quantum addresses are found with ML-KEM-768.">
+<meta property="og:title" content="Mojavechain: private money for the quantum era">
+<meta property="og:description" content="Private by default, and built so the privacy survives quantum computers.">
+<meta property="og:image" content="img/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0b0b0b">
+<link rel="icon" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="brand" href="index.html"><img src="img/mark-128.png" alt="Mojavechain">MOJAVE<b>CHAIN</b></a>
+  <nav>
+    <a href="#why">why</a>
+    <a href="privacy.html">privacy</a>
+    <a href="token.html">token</a>
+    <a href="mining.html">mining</a>
+    <a href="faq.html">faq</a>
+  </nav>
+  <div class="navbtns">
+    <a class="btn sm" href="/explorer">explorer</a>
+    <a class="btn sm pri" href="/wallet">open wallet</a>
+  </div>
+  <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
+</header>
+
+<main>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="markrow"><img src="img/mark.png" alt=""><span class="cap"><i class="dot" data-live></i><span data-live-txt>testnet live</span></span></div>
+      <h1>Private money<br>for the<br><em>quantum era.</em></h1>
+      <p class="lead">Every transaction hides who sent it, who received it and how much moved. Payments to quantum addresses are sealed with <span class="nw">ML-KEM-768</span>, the lattice standard, so a machine that breaks elliptic curves cannot go back and read them.</p>
+      <div class="cta">
+        <a class="btn pri" href="/wallet">open the wallet</a>
+        <a class="btn" href="/whitepaper">read the whitepaper</a>
+      </div>
+    </div>
+    <aside class="net">
+      <div class="hd"><span class="cap">network</span><span class="cap gold" data-h>#…</span></div>
+      <div class="rows">
+        <div><span>height</span><b data-h>…</b></div>
+        <div><span>difficulty</span><b data-diff>…</b></div>
+        <div><span>block time</span><b data-time>…</b></div>
+        <div><span>mempool</span><b data-pool>…</b></div>
+      </div>
+      <div class="foot"><span class="mono" data-tip>reading the chain…</span><span class="mono" data-ago></span></div>
+    </aside>
+  </div>
+</section>
+
+<div class="band" role="presentation" aria-hidden="true"></div>
+
+<section class="sec" id="why">
+  <div class="wrap split">
+    <div class="rv">
+      <div class="kick"><i>01</i><s></s><span class="cap">the problem</span></div>
+      <h2>Anything recorded today can be read later.</h2>
+    </div>
+    <div class="rv prose">
+      <p>A public chain is a permanent record. Someone can copy it now, keep it on a disk, and run the maths on it years from now when the hardware is cheap enough. That turns every payment you make today into a note that opens itself later.</p>
+      <p>Privacy coins answered the first half of that: they hid the sender, the receiver and the amount using elliptic curves. The second half is the harder one. Elliptic curve privacy is exactly the kind that a large quantum computer undoes, and the record is already written.</p>
+      <p><b>Mojave is built so that what is private today stays private after quantum.</b> Payment detection moved to a lattice first, because that is the step that ties a payment to a person, and spells out how spend proofs follow.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="rv">
+      <div class="kick"><i>02</i><s></s><span class="cap">the machinery</span></div>
+      <h2>Six pieces, and each one replaces something a public chain gives away.</h2>
+    </div>
+    <div class="cards">
+      <div class="card rv"><div class="cap"><span>sender</span><i>ring of 16</i></div>
+        <h3>Ring signatures</h3><p>Each input signs alongside 15 decoys drawn from the chain, weighted toward recent outputs so the ring looks like a real spend. One of the 16 is yours. The proof never says which.</p>
+        <div class="rep">replaces <b>a public sender field</b></div></div>
+      <div class="card rv"><div class="cap"><span>receiver</span><i>one time keys</i></div>
+        <h3>Stealth outputs</h3><p>Nothing is paid to an address. Every payment lands at a key derived for that payment alone, so two payments to the same wallet share nothing an observer can match.</p>
+        <div class="rep">replaces <b>a reusable address</b></div></div>
+      <div class="card rv"><div class="cap"><span>amount</span><i>pedersen</i></div>
+        <h3>Hidden amounts</h3><p>The value travels as a Pedersen commitment with a 48 bit range proof. Inputs and outputs balance as curve points, so nobody can mint coins from a negative amount.</p>
+        <div class="rep">replaces <b>a public amount</b></div></div>
+      <div class="card rv"><div class="cap"><span>quantum</span><i>ml kem 768</i></div>
+        <h3>Lattice receive</h3><p>A quantum address carries an ML-KEM-768 public key. The sender encapsulates a fresh secret for every payment and the ciphertext rides with the output. Only the receiver can open it.</p>
+        <div class="rep">replaces <b>elliptic curve diffie hellman</b></div></div>
+      <div class="card rv"><div class="cap"><span>double spend</span><i>key images</i></div>
+        <h3>Key images</h3><p>One output always produces the same key image, so a second spend is refused, yet nothing on chain links that image back to the output it came from.</p>
+        <div class="rep">replaces <b>a public spent flag</b></div></div>
+      <div class="card rv"><div class="cap"><span>consensus</span><i>argon2id</i></div>
+        <h3>Memory hard work</h3><p>Argon2id with 8 MiB per hash. Ordinary CPUs stay competitive, and no one signs a block, so there is no validator key to forge or lean on.</p>
+        <div class="rep">replaces <b>validator signatures</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="rv">
+      <div class="kick"><i>03</i><s></s><span class="cap">one payment</span></div>
+      <h2>What actually happens when you send.</h2>
+    </div>
+    <div class="steps">
+      <div class="step rv"><i>01</i><h4>Share an address</h4><p>The receiver hands over a quantum address: a spend key, a view key and an ML-KEM-768 public key. It is about 1,700 characters, so wallets copy it whole rather than ask anyone to type it.</p></div>
+      <div class="step rv"><i>02</i><h4>Derive a one time address</h4><p>Your wallet encapsulates a shared secret to that lattice key and turns it into a key used once. Nobody else can compute the same key from the chain, then or later.</p></div>
+      <div class="step rv"><i>03</i><h4>Seal the amount</h4><p>The amount becomes a commitment, encrypted to the receiver and backed by a range proof. The chain sees a point, not a number.</p></div>
+      <div class="step rv"><i>04</i><h4>Sign inside a ring</h4><p>The wallet picks 15 decoys, builds one signature across all 16 members and publishes a key image. All of it runs in your browser, on your keys.</p></div>
+      <div class="step rv"><i>05</i><h4>Mine and scan</h4><p>The node checks the signature, the range proofs, the balance and the key image. Miners seal it, and every wallet tries its keys on the new output. One of them opens.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="rv">
+      <div class="kick"><i>04</i><s></s><span class="cap">where it stands</span></div>
+      <h2 class="wide">Honest about the half that is not quantum safe yet.</h2>
+      <p class="lead">Receiving survives quantum today. Spending still uses elliptic curve ring signatures, and Faraday is the upgrade that moves them to hash based proofs over the whole chain, which is why it is the next milestone rather than a marketing slide.</p>
+    </div>
+    <div class="tbl rv">
+      <table>
+        <thead><tr><th></th><th>Mojave</th><th>Monero</th><th>Zcash</th></tr></thead>
+        <tbody>
+          <tr class="us"><td>private by default</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr class="us"><td>receiving survives quantum</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+          <tr class="us"><td>spends post quantum today</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+          <tr class="us"><td>trusted setup</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+          <tr class="us"><td>amounts hidden</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pull rv"><p>A ring signature that a quantum computer can break is not a privacy guarantee. It is a delay.</p><span class="cap">faraday, the next milestone</span></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="rv">
+      <div class="kick"><i>05</i><s></s><span class="cap">the rules</span></div>
+      <h2>Everything above is a number you can check.</h2>
+    </div>
+    <div class="tbl rv">
+      <table>
+        <tbody>
+          <tr><td>ring size</td><td><b>16</b> outputs per input, 15 of them decoys</td></tr>
+          <tr><td>decoy selection</td><td>mature outputs only, newest 15% of the chain weighted 6x</td></tr>
+          <tr><td>range proofs</td><td><b>48 bit</b>, one per output</td></tr>
+          <tr><td>work</td><td>Argon2id, 8 MiB memory, retargeted every block toward <b>30 s</b></td></tr>
+          <tr><td>emission</td><td>(100M − emitted) / 2^19 per block, then <b>2.0</b> forever</td></tr>
+          <tr><td>maturity</td><td><b>3</b> blocks before an output can be spent or used as a decoy</td></tr>
+          <tr><td>mempool</td><td>200 transactions, ordered by fee per byte</td></tr>
+          <tr><td>addresses</td><td><b>mjc1</b> 97 characters, <b>mjcq1</b> about 1,715</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap split">
+    <div class="rv">
+      <div class="kick"><i>06</i><s></s><span class="cap">roadmap</span></div>
+      <h2>Testnet to Faraday.</h2>
+      <p class="lead">The testnet is live and anyone can mine it. Faraday is the upgrade that finishes the quantum story on the spend side.</p>
+    </div>
+    <div class="road rv">
+      <div class="done"><h4>Testnet live <span class="done">done</span></h4><p>Private transactions, explorer, browser wallet, faucet and public mining, all serving from one Node process.</p></div>
+      <div class="done"><h4>$MOJAVE <span class="done">live</span></h4><p>The token that carries the project and pays for development up to mainnet.</p></div>
+      <div class="done"><h4>Open mining <span class="done">done</span></h4><p>Mine in the browser at <a class="gold" href="/mine">/mine</a> or with the CLI miner, and get paid to your own private address.</p></div>
+      <div class="now"><h4>Faraday <span>next</span></h4><p>Spend proofs move off elliptic curves, the anonymity set grows from 16 outputs to every output on the chain, and detection becomes ML-KEM only.</p></div>
+      <div><h4>Mainnet <span>planned</span></h4><p>Genesis with Faraday on from block 1. Same chain, no new coin.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-sec">
+  <img class="stamp" src="img/dither-mark.png" alt="">
+  <div class="wrap rv">
+    <div class="kick" style="justify-content:center"><i>07</i><s></s><span class="cap">try it</span></div>
+    <h2>Take a faucet drip and send it somewhere private.</h2>
+    <div class="btns">
+      <a class="btn pri" href="/wallet">open the wallet</a>
+      <a class="btn" href="/explorer">browse the chain</a>
+      <a class="btn" href="/mine">start mining</a>
+    </div>
+    <p class="cap" style="margin-top:26px">testnet only · the coin has no value</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="index.html"><img src="img/mark-128.png" alt="">MOJAVE<b>CHAIN</b></a>
+        <p>Private money for the quantum era. Receiving is lattice based today, spends follow at Faraday.</p>
+      </div>
+      <div><h5>network</h5><ul>
+        <li><a href="/explorer">explorer</a></li>
+        <li><a href="/wallet">wallet</a></li>
+        <li><a href="/mine">mining</a></li>
+        <li><a href="/api/stats">stats api</a></li>
+      </ul></div>
+      <div><h5>learn</h5><ul>
+        <li><a href="privacy.html">how privacy works</a></li>
+        <li><a href="/whitepaper">whitepaper</a></li>
+        <li><a href="/docs">docs</a></li>
+        <li><a href="faq.html">faq</a></li>
+      </ul></div>
+      <div><h5>project</h5><ul>
+        <li><a href="token.html">$MOJAVE</a></li>
+        <li><a href="https://github.com/MojaveL1/MojaveL1" rel="noopener">github</a></li>
+        <li><a href="https://x.com/MojavechainL1" rel="noopener">x</a></li>
+      </ul></div>
+    </div>
+    <div class="base">
+      <span>© <span id="yr">2026</span> Mojavechain</span>
+      <span>testnet · the coin has no value</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

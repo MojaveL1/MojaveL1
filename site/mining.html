@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mining · Mojavechain</title>
+<meta name="description" content="Argon2id proof of work, 30 second blocks and rewards paid to your own private address. Mine in the browser or from a terminal.">
+<meta property="og:title" content="Mining · Mojavechain">
+<meta property="og:description" content="Memory hard work that leaves ordinary CPUs a fair shot.">
+<meta property="og:image" content="img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0b0b0b">
+<link rel="icon" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="brand" href="index.html"><img src="img/mark-128.png" alt="Mojavechain">MOJAVE<b>CHAIN</b></a>
+  <nav>
+    <a href="index.html#why">why</a>
+    <a href="privacy.html">privacy</a>
+    <a href="token.html">token</a>
+    <a href="mining.html" aria-current="page">mining</a>
+    <a href="faq.html">faq</a>
+  </nav>
+  <div class="navbtns">
+    <a class="btn sm" href="/explorer">explorer</a>
+    <a class="btn sm pri" href="/wallet">open wallet</a>
+  </div>
+  <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
+</header>
+
+<main>
+
+<section class="hero" style="padding-bottom:64px">
+  <div class="wrap">
+    <div>
+      <div class="markrow"><span class="cap"><i>03</i> mining</span></div>
+      <h1>Mine it on<br>a laptop.</h1>
+      <p class="lead">Argon2id with 8 MiB per hash. The work is memory hard on purpose: a graphics card gains little, an application specific miner gains less, and a normal CPU is still worth running.</p>
+      <div class="cta">
+        <a class="btn pri" href="/mine">mine in the browser</a>
+        <a class="btn" href="#cli">use the cli</a>
+      </div>
+    </div>
+    <aside class="net">
+      <div class="hd"><span class="cap">this chain, right now</span><span class="cap gold" data-h>#…</span></div>
+      <div class="rows">
+        <div><span>difficulty</span><b data-diff>…</b></div>
+        <div><span>block time</span><b data-time>…</b></div>
+        <div><span>reward</span><b data-reward>…</b></div>
+        <div><span>mempool</span><b data-pool>…</b></div>
+      </div>
+      <div class="foot"><span class="mono" data-tip>reading the chain…</span><span class="mono" data-ago></span></div>
+    </aside>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap split">
+    <div class="rv">
+      <div class="kick"><i>01</i><s></s><span class="cap">the work</span></div>
+      <h2>The node does not trust the miner.</h2>
+    </div>
+    <div class="rv prose">
+      <p>You ask the node for a block template with your address at the bottom. That template holds the header, the current difficulty and the Argon2id parameters, so you can hash the same bytes the node will hash.</p>
+      <pre>argon2id(header | nonce) × difficulty &lt; 2^256</pre>
+      <p>Send back the nonce. The node recomputes the hash itself, and only then does it accept the block. A miner that lies wastes its own time, and nothing else.</p>
+      <p>Difficulty retargets every block toward a thirty second block time, inside a band, so a sudden arrival of miners cannot stall the chain for an hour.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="cli">
+  <div class="wrap">
+    <div class="rv">
+      <div class="kick"><i>02</i><s></s><span class="cap">two ways</span></div>
+      <h2 class="wide">Pick whichever is closer to where you already are.</h2>
+    </div>
+    <div class="cards" style="grid-template-columns:1fr 1fr">
+      <div class="card rv"><div class="cap"><span>browser</span><i>no install</i></div>
+        <h3>Open the page and press start</h3>
+        <p>The miner at <a class="gold" href="/mine">/mine</a> runs Argon2id in WebAssembly, one worker per thread. Rewards go to the address you paste in, classic or quantum. The tab has to stay open, and a phone will be slower than a desktop.</p>
+        <div class="rep">open <b>/mine</b></div></div>
+      <div class="card rv"><div class="cap"><span>terminal</span><i>node 24</i></div>
+        <h3>Run the CLI against any node</h3>
+        <p>Same work, no browser in the way. Point it at the public node, or at your own copy of the repository, and give it as many threads as you have cores.</p>
+        <div class="rep">one file <b>miner/miner.js</b></div></div>
+    </div>
+    <div class="rv">
+      <pre style="margin-top:36px"><span class="c"># clone, install, mine</span>
+git clone https://github.com/MojaveL1/MojaveL1
+cd MojaveL1
+npm install
+node miner/miner.js YOUR_MJC1_OR_MJCQ1_ADDRESS --threads 8
+
+<span class="c"># or against a node you run yourself</span>
+node miner/miner.js YOUR_ADDRESS --node http://localhost:8266</pre>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap split">
+    <div class="rv">
+      <div class="kick"><i>03</i><s></s><span class="cap">what you earn</span></div>
+      <h2>A reward, then two minutes of waiting.</h2>
+    </div>
+    <div class="rv prose">
+      <p>Each block pays its miner, plus the fees of the private transactions inside it. Testnet rewards are the emission schedule on the token page: falling smoothly, then two tMOJAVE per block forever.</p>
+      <p>Coinbase outputs mature after three blocks, roughly ninety seconds. Until then they show as locked and cannot be spent, and cannot be used as a decoy either, so a miner's own fresh coins never end up in someone else's ring.</p>
+      <p>There is a leaderboard at <a class="gold" href="/mine">/mine</a>. It counts public blocks per payout address and shows a short fingerprint rather than the address itself, because publishing a payout address would publish the person.</p>
+      <div class="notice">
+        <div class="cap">the honest part</div>
+        <p>The testnet is one node today. Difficulty is low enough that a single machine can find blocks, which is a fair description of a testnet and a poor description of a network. Mining it is for testing the mechanics, not for income.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="band short" role="presentation" aria-hidden="true"></div>
+
+<section class="cta-sec">
+  <img class="stamp" src="img/dither-mark.png" alt="">
+  <div class="wrap rv">
+    <div class="kick" style="justify-content:center"><i>04</i><s></s><span class="cap">try it</span></div>
+    <h2>Point a miner at it and watch a block land.</h2>
+    <div class="btns">
+      <a class="btn pri" href="/mine">start mining</a>
+      <a class="btn" href="/explorer">see the blocks</a>
+      <a class="btn" href="token.html">token and emission</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="index.html"><img src="img/mark-128.png" alt="">MOJAVE<b>CHAIN</b></a>
+        <p>Private money for the quantum era. Receiving is lattice based today, spends follow at Faraday.</p>
+      </div>
+      <div><h5>network</h5><ul>
+        <li><a href="/explorer">explorer</a></li>
+        <li><a href="/wallet">wallet</a></li>
+        <li><a href="/mine">mining</a></li>
+        <li><a href="/api/stats">stats api</a></li>
+      </ul></div>
+      <div><h5>learn</h5><ul>
+        <li><a href="privacy.html">how privacy works</a></li>
+        <li><a href="/whitepaper">whitepaper</a></li>
+        <li><a href="/docs">docs</a></li>
+        <li><a href="faq.html">faq</a></li>
+      </ul></div>
+      <div><h5>project</h5><ul>
+        <li><a href="token.html">$MOJAVE</a></li>
+        <li><a href="https://github.com/MojaveL1/MojaveL1" rel="noopener">github</a></li>
+        <li><a href="https://x.com/MojavechainL1" rel="noopener">x</a></li>
+      </ul></div>
+    </div>
+    <div class="base">
+      <span>© <span id="yr">2026</span> Mojavechain</span>
+      <span>testnet only</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

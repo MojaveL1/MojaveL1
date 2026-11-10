@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FAQ · Mojavechain</title>
+<meta name="description" content="Straight answers about Mojavechain: privacy, quantum safety, mining, the token, and what is still unfinished.">
+<meta property="og:title" content="FAQ · Mojavechain">
+<meta property="og:description" content="Straight answers about privacy, quantum safety, mining and the token.">
+<meta property="og:image" content="img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0b0b0b">
+<link rel="icon" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="brand" href="index.html"><img src="img/mark-128.png" alt="Mojavechain">MOJAVE<b>CHAIN</b></a>
+  <nav>
+    <a href="index.html#why">why</a>
+    <a href="privacy.html">privacy</a>
+    <a href="token.html">token</a>
+    <a href="mining.html">mining</a>
+    <a href="faq.html" aria-current="page">faq</a>
+  </nav>
+  <div class="navbtns">
+    <a class="btn sm" href="/explorer">explorer</a>
+    <a class="btn sm pri" href="/wallet">open wallet</a>
+  </div>
+  <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
+</header>
+
+<main>
+
+<section class="hero" style="padding-bottom:56px">
+  <div class="wrap">
+    <div>
+      <div class="markrow"><span class="cap"><i>04</i> questions</span></div>
+      <h1>Asked and<br>answered.</h1>
+      <p class="lead">Including the ones a project usually avoids: what is not built yet, what has not been audited, and why the testnet coin is worthless on purpose.</p>
+    </div>
+    <aside class="net">
+      <div class="hd"><span class="cap">the chain right now</span><span class="cap gold" data-h>#…</span></div>
+      <div class="rows">
+        <div><span>height</span><b data-h>…</b></div>
+        <div><span>block time</span><b data-time>…</b></div>
+        <div><span>outputs</span><b data-outs>…</b></div>
+        <div><span>private txs</span><b data-txs>…</b></div>
+      </div>
+      <div class="foot"><span class="mono" data-tip>reading the chain…</span><span class="mono" data-ago></span></div>
+    </aside>
+  </div>
+</section>
+
+<section class="sec tight">
+  <div class="wrap narrow left">
+    <div class="faq">
+
+      <details open>
+        <summary>What is Mojavechain, in one sentence?</summary>
+        <p>A proof of work chain where every transaction hides its sender, its receiver and its amount, and where payments to quantum addresses are found with a lattice cipher instead of elliptic curves.</p>
+      </details>
+
+      <details>
+        <summary>Is there a transparent mode?</summary>
+        <p>No. There is no public ledger view to opt into and no shield button to forget. An address either receives a private output or receives nothing. Amounts travel as commitments, so even the block explorer shows a point rather than a number.</p>
+      </details>
+
+      <details>
+        <summary>Is it quantum safe today?</summary>
+        <p>Receiving is. A <code>mjcq1</code> address carries an ML-KEM-768 key, the sender encapsulates a fresh secret for every payment, and the 1,088 byte ciphertext is stored with the output. A quantum computer recording the chain today cannot derive the shared secret later.</p>
+        <p>Spending is not, yet. Ring signatures and key images still rest on the discrete log problem. Faraday replaces them with hash based proofs and widens the anonymity set from 16 outputs to the whole chain. Until it ships, treat the spend side as a delay rather than a guarantee.</p>
+      </details>
+
+      <details>
+        <summary>Why are the quantum addresses so long?</summary>
+        <p>Because an ML-KEM-768 public key is 1,184 bytes. Base58 encoded alongside the spend and view keys, an <code>mjcq1</code> address lands around 1,715 characters. Wallets copy and paste the whole thing, and the wallet screen offers a QR code for phone to phone transfer. A classic <code>mjc1</code> address is 97 characters and works the same way, minus the lattice key.</p>
+      </details>
+
+      <details>
+        <summary>How do I get coins to try it?</summary>
+        <p>The faucet in the wallet sends 25 tMOJAVE, once an hour per address, into a private output. You can also mine: open <a class="gold" href="/mine">/mine</a> and leave the tab running, or run <code>node miner/miner.js YOUR_ADDRESS</code>. Mining pays whatever difficulty you can beat, so a laptop still finds blocks on a testnet this size.</p>
+      </details>
+
+      <details>
+        <summary>Why does a fresh coin show as locked?</summary>
+        <p>Every output needs three confirmations before it can be spent, and the same rule applies to ring members, so an output younger than three blocks cannot be used as a decoy either. At a thirty second block time that is about ninety seconds of waiting. The rule exists so a miner cannot spend the reward from the block they just found inside a ring that someone else is building.</p>
+      </details>
+
+      <details>
+        <summary>What is the difference between $MOJAVE and tMOJAVE?</summary>
+        <p><b>$MOJAVE</b> is the project token on Solana. It funds development and carries the community to mainnet. <b>tMOJAVE</b> is the coin this testnet mints, it comes from the faucet or from mining, and it has no value and cannot be sold. Testnet balances will be wiped before mainnet, by design.</p>
+      </details>
+
+      <details>
+        <summary>Is there a premine?</summary>
+        <p>Not on the chain. Genesis starts with nothing emitted, every block pays the miner who found it plus the fees inside it, and the first block carries no special allocation. The reward curve is <code>(100,000,000 − emitted) / 2^19</code>, then a flat 2.0 per block forever, so mining never stops being paid.</p>
+      </details>
+
+      <details>
+        <summary>Do I have to trust the node to check a transaction?</summary>
+        <p>No. Every transaction page has a verify button. Your browser pulls the transaction and its ring members from <code>/api/rawtx/:id</code> and runs the same <code>verifyTx</code> the node runs: each ring signature, each range proof and the balance of the commitments. If the node lied, your browser would say so.</p>
+      </details>
+
+      <details>
+        <summary>What are the cryptography libraries?</summary>
+        <p>ristretto255 and SHA3 come from <code>@noble/curves</code> and <code>@noble/hashes</code>, ML-KEM-768 comes from <code>@noble/post-quantum</code>, and Argon2id is built into Node. Nothing is hand rolled. The test suite covers stealth scanning, lattice detection, range proofs, ring signatures, forged signatures and double spends, and it runs on every push.</p>
+      </details>
+
+      <details>
+        <summary>Has the code been audited?</summary>
+        <p>A full protocol audit has not been published. The primitives are audited libraries and the chain logic is small enough to read, but reading it is currently the only assurance on offer. That is why every claim on this site is written so you can test it instead of believing it, and why this site says testnet rather than mainnet.</p>
+      </details>
+
+      <details>
+        <summary>When mainnet?</summary>
+        <p>After Faraday. The order is deliberate: shipping a mainnet on elliptic curve ring signatures would mean launching a chain that needs a hard fork to become what it claims to be. Faraday first, then genesis with it switched on from block 1. No second coin, no migration sale.</p>
+      </details>
+
+      <details>
+        <summary>Can I run the whole thing myself?</summary>
+        <p>Yes, and it is one process. Clone the repository, run <code>npm install</code> and <code>npm start</code>, and you have a node, an explorer, a wallet and a faucet on <code>localhost:8266</code>. Node 24 or newer. Set <code>PORT</code>, <code>DATA_PATH</code>, <code>BLOCK_SEC</code> or <code>ARGON_KIB</code> if you want different behaviour.</p>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<div class="band short" role="presentation" aria-hidden="true"></div>
+
+<section class="cta-sec">
+  <img class="stamp" src="img/dither-mark.png" alt="">
+  <div class="wrap rv">
+    <h2>Still curious? The code is the answer.</h2>
+    <div class="btns">
+      <a class="btn pri" href="/whitepaper">read the whitepaper</a>
+      <a class="btn" href="https://github.com/MojaveL1/MojaveL1" rel="noopener">browse the source</a>
+      <a class="btn" href="/docs">read the docs</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="index.html"><img src="img/mark-128.png" alt="">MOJAVE<b>CHAIN</b></a>
+        <p>Private money for the quantum era. Receiving is lattice based today, spends follow at Faraday.</p>
+      </div>
+      <div><h5>network</h5><ul>
+        <li><a href="/explorer">explorer</a></li>
+        <li><a href="/wallet">wallet</a></li>
+        <li><a href="/mine">mining</a></li>
+        <li><a href="/api/stats">stats api</a></li>
+      </ul></div>
+      <div><h5>learn</h5><ul>
+        <li><a href="privacy.html">how privacy works</a></li>
+        <li><a href="/whitepaper">whitepaper</a></li>
+        <li><a href="/docs">docs</a></li>
+        <li><a href="faq.html">faq</a></li>
+      </ul></div>
+      <div><h5>project</h5><ul>
+        <li><a href="token.html">$MOJAVE</a></li>
+        <li><a href="https://github.com/MojaveL1/MojaveL1" rel="noopener">github</a></li>
+        <li><a href="https://x.com/MojavechainL1" rel="noopener">x</a></li>
+      </ul></div>
+    </div>
+    <div class="base">
+      <span>© <span id="yr">2026</span> Mojavechain</span>
+      <span>testnet only · the coin has no value</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

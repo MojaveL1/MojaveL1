@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>$MOJAVE · Mojavechain</title>
+<meta name="description" content="What $MOJAVE is, what the testnet coin is, and the emission schedule that pays for the chain.">
+<meta property="og:title" content="$MOJAVE · Mojavechain">
+<meta property="og:description" content="The token that carries the project to mainnet, and the testnet coin that has no value.">
+<meta property="og:image" content="img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0b0b0b">
+<link rel="icon" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="brand" href="index.html"><img src="img/mark-128.png" alt="Mojavechain">MOJAVE<b>CHAIN</b></a>
+  <nav>
+    <a href="index.html#why">why</a>
+    <a href="privacy.html">privacy</a>
+    <a href="token.html" aria-current="page">token</a>
+    <a href="mining.html">mining</a>
+    <a href="faq.html">faq</a>
+  </nav>
+  <div class="navbtns">
+    <a class="btn sm" href="/explorer">explorer</a>
+    <a class="btn sm pri" href="/wallet">open wallet</a>
+  </div>
+  <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
+</header>
+
+<main>
+
+<section class="hero" style="padding-bottom:64px">
+  <div class="wrap">
+    <div>
+      <div class="markrow"><span class="cap"><i>02</i> the token</span></div>
+      <h1>Two coins.<br>One of them is<br><em>worth nothing.</em></h1>
+      <p class="lead">$MOJAVE is the token that carries the project and pays for development up to mainnet. tMOJAVE is the testnet coin you get from the faucet to try every feature. They are not the same thing, and the second one is deliberately worthless.</p>
+      <div class="cta">
+        <a class="btn pri" href="/wallet">get testnet coins</a>
+        <a class="btn" href="mining.html">mine instead</a>
+      </div>
+    </div>
+    <aside class="net">
+      <div class="hd"><span class="cap">chain right now</span><span class="cap gold" data-h>#…</span></div>
+      <div class="rows">
+        <div><span>block reward</span><b data-reward>…</b></div>
+        <div><span>emitted</span><b data-emitted>…</b></div>
+        <div><span>height</span><b data-h>…</b></div>
+        <div><span>public blocks</span><b data-public>…</b></div>
+      </div>
+      <div class="foot"><span class="mono">tMOJAVE · millionths</span><span class="mono" data-ago></span></div>
+    </aside>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="rv">
+      <div class="kick"><i>01</i><s></s><span class="cap">the two</span></div>
+      <h2>What each one is for.</h2>
+    </div>
+    <div class="cards" style="grid-template-columns:1fr 1fr">
+      <div class="card rv"><div class="cap"><span>$MOJAVE</span><i>solana</i></div>
+        <h3>The project token</h3>
+        <p>It funds development and carries the community from a working testnet to mainnet. It is issued on Solana, which keeps it separate from the chain's own emission and lets it trade before the chain has a genesis block.</p>
+        <div class="rep">stage <b>live</b></div></div>
+      <div class="card rv"><div class="cap"><span>tMOJAVE</span><i>testnet</i></div>
+        <h3>The test coin</h3>
+        <p>Twenty five from the faucet, once an hour, or whatever you mine. It exists so you can send a private transaction, watch it land in a block and verify it yourself. It will be reset with the testnet.</p>
+        <div class="rep">value <b>none, by design</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap split">
+    <div class="rv">
+      <div class="kick"><i>02</i><s></s><span class="cap">emission</span></div>
+      <h2>Where testnet coins come from.</h2>
+      <p class="lead">No premine on the testnet chain. Blocks pay their miner, and the curve is written into the node.</p>
+    </div>
+    <div class="rv prose">
+      <p>Every block pays the miner who found it, plus the fees of the transactions inside it. The reward falls smoothly rather than in halvings:</p>
+      <pre>reward = (100,000,000 − emitted) / 2^19
+then     2.0 tMOJAVE per block, forever</pre>
+      <p>The tail matters. A chain that pays nothing eventually stops being mined, and a privacy chain with too few miners has a weak anonymity set. Two coins per block keeps the work going indefinitely.</p>
+      <p>Coinbase outputs mature after three blocks, and so does every output used in a ring, which is why a fresh faucet drip shows as locked for about ninety seconds.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="rv">
+      <div class="kick"><i>03</i><s></s><span class="cap">getting some</span></div>
+      <h2 class="wide">Three ways to hold a testnet coin.</h2>
+    </div>
+    <div class="steps">
+      <div class="step rv"><i>01</i><h4>Faucet</h4><p>Open the wallet, press the faucet button, and twenty five tMOJAVE arrives in a private transaction. One drip per address and per network, once an hour, so the node is not drained by a script.</p></div>
+      <div class="step rv"><i>02</i><h4>Mine in the browser</h4><p>Open <a class="gold" href="/mine">/mine</a>, pick your threads and leave the tab running. Rewards go straight to the address you paste in, which can be a quantum address.</p></div>
+      <div class="step rv"><i>03</i><h4>Mine from a terminal</h4><p>The CLI miner talks to any node, yours or the public one. It fetches a block template, solves Argon2id on every core and submits the nonce.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap split">
+    <div class="rv">
+      <div class="kick"><i>04</i><s></s><span class="cap">disclosure</span></div>
+      <h2>What this page does not say.</h2>
+    </div>
+    <div class="rv prose">
+      <div class="notice" style="margin-top:0">
+        <div class="cap">read this before you buy anything</div>
+        <p>tMOJAVE has no value and cannot be sold. Nothing here is an offer to sell tokens or a promise of a return. This page does not list prices, venues or allocations, because those are not published here.</p>
+      </div>
+      <p>The chain is a testnet run by one node. The code has not been independently audited. The privacy claims on this site are testable in your browser, and you should test them rather than trust them.</p>
+      <p>If you want the technical detail, the whitepaper is a ten minute read and the repository is small enough to skim in an evening.</p>
+      <div class="cta" style="margin-top:26px">
+        <a class="btn" href="/whitepaper">whitepaper</a>
+        <a class="btn" href="https://github.com/MojaveL1/MojaveL1" rel="noopener">source</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="band short" role="presentation" aria-hidden="true"></div>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="index.html"><img src="img/mark-128.png" alt="">MOJAVE<b>CHAIN</b></a>
+        <p>Private money for the quantum era. Receiving is lattice based today, spends follow at Faraday.</p>
+      </div>
+      <div><h5>network</h5><ul>
+        <li><a href="/explorer">explorer</a></li>
+        <li><a href="/wallet">wallet</a></li>
+        <li><a href="/mine">mining</a></li>
+        <li><a href="/api/stats">stats api</a></li>
+      </ul></div>
+      <div><h5>learn</h5><ul>
+        <li><a href="privacy.html">how privacy works</a></li>
+        <li><a href="/whitepaper">whitepaper</a></li>
+        <li><a href="/docs">docs</a></li>
+        <li><a href="faq.html">faq</a></li>
+      </ul></div>
+      <div><h5>project</h5><ul>
+        <li><a href="token.html">$MOJAVE</a></li>
+        <li><a href="https://github.com/MojaveL1/MojaveL1" rel="noopener">github</a></li>
+        <li><a href="https://x.com/MojavechainL1" rel="noopener">x</a></li>
+      </ul></div>
+    </div>
+    <div class="base">
+      <span>© <span id="yr">2026</span> Mojavechain</span>
+      <span>testnet only</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

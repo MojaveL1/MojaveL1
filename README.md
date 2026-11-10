@@ -7,7 +7,7 @@
 - Live testnet, explorer and wallet: https://mojavechain.org
 - Whitepaper: [WHITEPAPER.md](WHITEPAPER.md) · https://mojavechain.org/whitepaper
 - X: [@MojavechainL1](https://x.com/MojavechainL1)
-- Token: $MOJAVE on Solana carries the project to mainnet. The testnet coin ($MOJAVE).
+- Token: $MOJAVE on Solana carries the project to mainnet. The testnet coin is tMOJAVE, free from the faucet.
 
 ## What runs today
 
