@@ -17,7 +17,7 @@ fs.writeFileSync(path.join(__dirname, '../client/whitepaper.html'), `<!doctype h
 <title>Mojave Whitepaper</title><meta name="description" content="Mojavechain whitepaper: private money for the quantum era."><link rel="icon" href="/favicon.svg"><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
 <main class="wrap app prose">
 <div class="pagehead"><h1>${esc(title)}</h1><span class="cap">${esc(sub)}</span></div>
-<p style="margin-top:18px"><a href="https://github.com/Mojavechain/mojave/blob/main/WHITEPAPER.md">also on GitHub ↗</a></p>
+<p style="margin-top:18px"><a href="https://github.com/MojaveL1/MojaveL1/blob/main/WHITEPAPER.md">also on GitHub ↗</a></p>
 ${out.join('\n')}
 </main>
 <script type="module">import { chrome } from '/common.js'; chrome();</script></body></html>

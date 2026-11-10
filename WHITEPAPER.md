@@ -63,12 +63,15 @@ I = x*Hp(P)
 
 One output always gives the same key image, so a second spend is rejected, but nothing links the key image back to the output.
 
+The 15 decoys are not drawn uniformly. Real spends cluster in recent outputs, so an even spread across the chain would mark the ring as synthetic. Members inside the newest 15% of the chain carry six times the weight of older ones, which has the same effect as the gamma distribution the Monero research lab recommends for output selection. Outputs younger than three blocks are never used.
+
 ## 7. Consensus
 
 - Proof of work: Argon2id, memory-hard, so mining favours ordinary CPUs over specialised hardware.
 - A block is valid when argon2id(header | nonce) * difficulty < 2^256.
 - Difficulty retargets every block toward a 30-second block time.
-- Coinbase outputs mature after 3 confirmations.
+- An output can be spent, or used as a decoy, only after 3 confirmations. The rule is checked on all 16 ring members, since the node cannot see which one is real.
+- The mempool holds 200 transactions, ordered by fee per byte. A full pool drops its cheapest.
 
 ## 8. Emission
 
@@ -108,5 +111,5 @@ $MOJAVE is the Solana token that funds development and carries the community to 
 
 - Testnet, explorer and wallet: https://mojavechain.org
 - Docs: https://mojavechain.org/docs
-- Code: https://github.com/Mojavechain/mojave
+- Code: https://github.com/MojaveL1/MojaveL1
 - X: https://x.com/MojavechainL1

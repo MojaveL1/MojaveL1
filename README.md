@@ -83,6 +83,8 @@ POST /api/faucet  {address}         25 tMOJAVE, once an hour
 |---|---|
 | Ring size | 16 |
 | Range proofs | 48-bit, one per output |
+| Decoy selection | recent outputs weighted 6x, mature only |
+| Mempool | fee per byte, 200 txs |
 | Proof of work | Argon2id, 8 MiB on testnet |
 | Block time | 30 s target |
 | Emission | `(100M − emitted) / 2^19` per block, 2.0 tail forever |

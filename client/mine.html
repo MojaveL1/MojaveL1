@@ -16,7 +16,7 @@
     <div class="row" style="margin-top:14px;align-items:center"><button class="btn solid" id="go">start mining</button><span class="dim" style="font:400 11px var(--mono);letter-spacing:.12em;text-transform:uppercase">threads <b id="tn" style="color:var(--ice)"></b></span><input type="range" id="th" min="1"><a class="btn gh" href="/wallet">open wallet ↗</a></div>
     <p class="dim" style="font-size:12px;margin-top:12px">Mining runs only while this tab is open. Coinbase rewards unlock after 3 confirmations and appear in your wallet after a rescan.</p></div></div>
   <div class="panel" style="margin-top:18px"><div class="hd"><span>command-line miner</span><span>all cores · node 24+</span></div><div style="padding:18px">
-    <pre style="margin:0">git clone https://github.com/Mojavechain/mojave && cd mojave
+    <pre style="margin:0">git clone https://github.com/MojaveL1/MojaveL1 && cd MojaveL1
 node miner/miner.js YOUR_MJC1_ADDRESS --threads 8</pre><p class="dim" style="font-size:12px;margin-top:12px">The miner fetches work from <code>GET /api/work?address=…</code> and submits solutions to <code>POST /api/work</code>. The node re-checks every hash before it accepts a block. Point <code>--node</code> at your own node to mine against it.</p></div></div>
   <div class="panel" style="margin-top:18px"><div class="hd"><span>genesis leaderboard</span><span id="lbs">testnet miners</span></div>
     <p class="dim" style="font-size:12px;padding:14px 18px 0">Every block a public miner finds is recorded against their payout address. Testnet miners on this board are rewarded at mainnet genesis. Addresses are shown as a fingerprint, never in full.</p>

@@ -2,7 +2,7 @@
 <title>Mojave Whitepaper</title><meta name="description" content="Mojavechain whitepaper: private money for the quantum era."><link rel="icon" href="/favicon.svg"><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Geist+Mono:wght@400&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head><body>
 <main class="wrap app prose">
 <div class="pagehead"><h1>Mojavechain: private money for the quantum era</h1><span class="cap">Mojavechain whitepaper, version 0.1 (testnet), November 2026</span></div>
-<p style="margin-top:18px"><a href="https://github.com/Mojavechain/mojave/blob/main/WHITEPAPER.md">also on GitHub ↗</a></p>
+<p style="margin-top:18px"><a href="https://github.com/MojaveL1/MojaveL1/blob/main/WHITEPAPER.md">also on GitHub ↗</a></p>
 <h3>Abstract</h3>
 <p>Mojavechain is a proof-of-work chain where every transaction is private by default. The sender hides in a ring of 16, the receiver behind a one-time stealth address, and the amount inside a Pedersen commitment with a range proof. Payments to quantum addresses (mjcq1) are detected with ML-KEM-768, the NIST post-quantum key encapsulation standard. The Faraday upgrade moves spends to hash-based proofs over the whole chain, so the last elliptic-curve dependency goes too. The testnet is live, and every rule in this paper is in the public repository and covered by its test suite.</p>
 <h3>1. The problem</h3>
@@ -27,8 +27,9 @@ mjcq1...  quantum: the same keys + an ML-KEM-768 public key</pre>
 <p>Each input references 16 outputs from the chain: the real one and 15 decoys. A two-row MLSAG signature proves the signer owns one of the 16 one-time keys and that its commitment matches the pseudo-input, without revealing which. The signature publishes a key image:</p>
 <pre>I = x*Hp(P)</pre>
 <p>One output always gives the same key image, so a second spend is rejected, but nothing links the key image back to the output.</p>
+<p>The 15 decoys are not drawn uniformly. Real spends cluster in recent outputs, so an even spread across the chain would mark the ring as synthetic. Members inside the newest 15% of the chain carry six times the weight of older ones, which has the same effect as the gamma distribution the Monero research lab recommends for output selection. Outputs younger than three blocks are never used.</p>
 <h3>7. Consensus</h3>
-<ul><li>Proof of work: Argon2id, memory-hard, so mining favours ordinary CPUs over specialised hardware.</li><li>A block is valid when argon2id(header | nonce) * difficulty &lt; 2^256.</li><li>Difficulty retargets every block toward a 30-second block time.</li><li>Coinbase outputs mature after 3 confirmations.</li></ul>
+<ul><li>Proof of work: Argon2id, memory-hard, so mining favours ordinary CPUs over specialised hardware.</li><li>A block is valid when argon2id(header | nonce) * difficulty &lt; 2^256.</li><li>Difficulty retargets every block toward a 30-second block time.</li><li>An output can be spent, or used as a decoy, only after 3 confirmations. The rule is checked on all 16 ring members, since the node cannot see which one is real.</li><li>The mempool holds 200 transactions, ordered by fee per byte. A full pool drops its cheapest.</li></ul>
 <h3>8. Emission</h3>
 <ul><li>Main emission: about 100,000,000 MOJAVE.</li><li>Block reward: (100M - emitted) / 2^19, a smooth curve that falls each block.</li><li>Tail emission: 2.0 MOJAVE per block, forever, so miners are always paid to secure the chain.</li></ul>
 <h3>9. Verification without trust</h3>
@@ -43,6 +44,6 @@ mjcq1...  quantum: the same keys + an ML-KEM-768 public key</pre>
 <h3>12. Roadmap</h3>
 <ul><li>Done: testnet live with explorer, browser wallet and faucet</li><li>Done: $MOJAVE launch</li><li>Done: open mining with Argon2id (browser miner at /mine, CLI miner in miner/)</li><li>Next: Faraday, hash-based spends and full-chain privacy</li><li>Then: mainnet with Faraday from block 1</li></ul>
 <h3>Links</h3>
-<ul><li>Testnet, explorer and wallet: <a href="https://mojavechain.org">https://mojavechain.org</a></li><li>Docs: <a href="https://mojavechain.org/docs">https://mojavechain.org/docs</a></li><li>Code: <a href="https://github.com/Mojavechain/mojave">https://github.com/Mojavechain/mojave</a></li><li>X: <a href="https://x.com/MojavechainL1">https://x.com/MojavechainL1</a></li></ul>
+<ul><li>Testnet, explorer and wallet: <a href="https://mojavechain.org">https://mojavechain.org</a></li><li>Docs: <a href="https://mojavechain.org/docs">https://mojavechain.org/docs</a></li><li>Code: <a href="https://github.com/MojaveL1/MojaveL1">https://github.com/MojaveL1/MojaveL1</a></li><li>X: <a href="https://x.com/MojavechainL1">https://x.com/MojavechainL1</a></li></ul>
 </main>
 <script type="module">import { chrome } from '/common.js'; chrome();</script></body></html>

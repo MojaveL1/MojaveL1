@@ -20,7 +20,7 @@ mjcq1…  quantum: the same keys + an ML-KEM-768 public key (about 1,700 charact
 <p>Each input names <b>16 outputs</b> from the chain: the real one and 15 decoys. An <b>MLSAG</b> signature over two rows proves that the signer owns one of the 16 one-time keys, and that its commitment matches the pseudo-input commitment, without saying which one. The signature publishes a <b>key image</b> <code>I = x·Hp(P)</code>. One output always gives the same key image, so a second spend is rejected, yet nothing links the key image to the output.</p>
 
 <h3>Verify any transaction yourself</h3>
-<p>Every transaction page in the explorer has a <b>verify in your browser</b> button. Your browser fetches the transaction and its ring members from <code>/api/rawtx/:id</code> and runs the same <code>verifyTx</code> the node runs: every MLSAG ring signature, every 48-bit range proof and the balance of commitments. Nothing is taken on trust from the node. The code is <a href="https://github.com/Mojavechain/mojave">public on GitHub</a>, with a test suite that runs on every push.</p>
+<p>Every transaction page in the explorer has a <b>verify in your browser</b> button. Your browser fetches the transaction and its ring members from <code>/api/rawtx/:id</code> and runs the same <code>verifyTx</code> the node runs: every MLSAG ring signature, every 48-bit range proof and the balance of commitments. Nothing is taken on trust from the node. The code is <a href="https://github.com/MojaveL1/MojaveL1">public on GitHub</a>, with a test suite that runs on every push.</p>
 
 <h3>Proof of work</h3>
 <p>Blocks are mined with <b>Argon2id</b>, a memory-hard hash. The header holds height, previous hash, timestamp, difficulty, transaction root and coinbase id. A block is valid when <code>argon2id(header | nonce) × difficulty &lt; 2^256</code>. Difficulty retargets every block toward a 30-second block time. The reward is <code>(100M − emitted) / 2^19</code> with a 2.0 tail emission that never ends. Coinbase outputs need 3 confirmations before they can be spent.</p>
@@ -45,7 +45,7 @@ POST /api/tx      {tx}              submit a private transaction
 POST /api/faucet  {address}         25 tMOJAVE, once an hour</pre>
 
 <h3>Run a node</h3>
-<pre>git clone https://github.com/Mojavechain/mojave
+<pre>git clone https://github.com/MojaveL1/MojaveL1
 cd mojave && npm i && npm start      # http://localhost:8266</pre>
 <p>Environment: <code>PORT</code>, <code>DATA_PATH</code> (chain file), <code>BLOCK_SEC</code> (target block time), <code>ARGON_KIB</code> (Argon2id memory), <code>MOJAVE_MINT</code> (the $MOJAVE token address shown on the site).</p>
 
