@@ -32,6 +32,7 @@ mjcq1…  quantum: the same keys + an ML-KEM-768 public key (about 1,700 charact
 <pre>GET  /api/work?address=A            block template paying the coinbase to A
 POST /api/work   {id, nonce}         submit a solved nonce (re-checked by the node)
 GET  /api/stats                     chain height, difficulty, outputs, key images, emission
+GET  /api/health                    200 when the node is ready, 503 while it rebuilds its wallet view
 GET  /api/blocks?limit=15&before=N  recent blocks
 GET  /api/block/:height|:hash       one block with its transactions
 GET  /api/txs                       mempool + recent private transactions
@@ -43,7 +44,7 @@ POST /api/spent   {kis:[…]}         which key images are spent
 GET  /api/decoys?n=15&avoid=a,b     random ring members
 POST /api/tx      {tx}              submit a private transaction
 POST /api/faucet  {address}         25 tMOJAVE, once an hour</pre>
-<p class="note">Every POST takes one JSON object, at most 1 MiB (a 16 input transaction is about 40 kB). Malformed JSON is a 400 with the reason, a body over the limit is a 413, so a bad client sees what went wrong instead of an empty request.</p>
+<p class="note">Every POST takes one JSON object, at most 1 MiB (a 16 input transaction is about 40 kB). Malformed JSON is a 400 with the reason, a body over the limit is a 413, so a bad client sees what went wrong instead of an empty request. Writes answer 503 with a <code>retry-after</code> header while a restarted node is still walking the chain to rebuild its wallet view, which is a minute on a large testnet; <code>/api/health</code> reports the same state.</p>
 
 <h3>Run a node</h3>
 <pre>git clone https://github.com/MojaveL1/MojaveL1

@@ -21,7 +21,7 @@ catch (e) { if (e.code !== 'ENOENT') { console.error('cannot read ' + DATA + ' (
 if (!S.seeds) S.seeds = Array.from({ length: 7 }, () => K.wallet().seed);
 const W = S.seeds.map((s) => K.wallet(s)), MINER = W[0], BOTS = W.slice(1);
 const NAMES = ['miner', 'nyx', 'umbra', 'vesper', 'halcyon', 'ghostline', 'cipher'];
-let mempool = [], saveT = 0;
+let mempool = [], saveT = 0, ready = false; const started = now();
 const save = () => { if (saveT) return; saveT = setTimeout(() => { saveT = 0; flush(); }, 1500); };
 // write a temp file, fsync it, then rename: a kill or a power cut leaves the last good chain, never half of a new one
 function flush() { if (saveT) { clearTimeout(saveT); saveT = 0; }
@@ -173,6 +173,8 @@ const body = (req) => new Promise((ok, no) => {
   req.on('error', (e) => { if (!done) { done = true; no(e); } });
 });
 const readJson = async (req, res) => { try { return await body(req); } catch (e) { json(res, e.code === 413 ? 413 : 400, { error: e.message }); return null; } };
+// a write needs the wallet view. while the rescan is still walking outputs, say so instead of answering from a half built view
+const gated = (res) => { if (ready) return false; res.setHeader('retry-after', '2'); json(res, 503, { error: 'node is rebuilding its wallet view, try again in a few seconds' }); return true; };
 const hits = new Map(); const limited = (ip, key, per) => { const k = ip + key, t = hits.get(k) || 0; if (now() - t < per) return true; hits.set(k, now()); return false; };
 
 // a chain that does not check out is not served: no mining on top of a corrupt file, and no overwriting it
@@ -182,6 +184,7 @@ const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x'), p = u.pathname, ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0];
   try {
     if (p === '/api/stats') return json(res, 200, stats());
+    if (p === '/api/health') return json(res, ready ? 200 : 503, { ok: ready, ready, network: 'testnet', height: height(), outputs: S.outs.length, mempool: mempool.length, uptime: Math.round((now() - started) / 1000) });
     if (p === '/api/blocks') { const lim = Math.min(100, +u.searchParams.get('limit') || 15), before = u.searchParams.has('before') ? +u.searchParams.get('before') : S.blocks.length; return json(res, 200, S.blocks.slice(Math.max(0, before - lim), before).reverse().map(blockView)); }
     if (p.startsWith('/api/block/')) { const id = decodeURIComponent(p.slice(11)), b = /^\d+$/.test(id) ? S.blocks[+id] : S.blocks.find((x) => x.hash === id); if (!b) return json(res, 404, { error: 'no such block' }); return json(res, 200, { ...blockView(b), tx: b.txs.map(txSummary).filter(Boolean) }); }
     if (p === '/api/txs') { const ids = []; for (let i = S.blocks.length - 1; i >= 0 && ids.length < 20; i--) for (const id of [...S.blocks[i].txs].reverse()) if (!S.txs[id]?.coinbase && ids.length < 20) ids.push(id); return json(res, 200, { mempool: mempool.map((t) => ({ id: K.txhash(t), ins: t.vin.length, outs: t.vout.length, fee: t.fee, quantum: t.vout.filter((o) => o.ct).length })), recent: ids.map(txSummary) }); }
@@ -194,18 +197,17 @@ const server = http.createServer(async (req, res) => {
         vout: t.vout.map((o) => ({ P: o.P, C: o.C, quantum: !!o.ct, ct: o.ct ? o.ct.slice(0, 96) : null, ctBytes: o.ct ? o.ct.length / 2 : 0, amount: t.coinbase ? o.amt : null, rangeBits: o.rp ? o.rp.length : t.coinbase ? 0 : K.BITS })), size: JSON.stringify(t).length }); }
     if (p === '/api/search') { const r = search(u.searchParams.get('q')); return json(res, r ? 200 : 404, r || { error: 'nothing found: try a block height, block hash, tx id or key image' }); }
     // wallet sync
-    if (p === '/api/outputs') { const from = Math.max(0, +u.searchParams.get('from') || 0), lim = Math.min(4000, +u.searchParams.get('limit') || 2000); return json(res, 200, { height: height(), total: S.outs.length, outs: S.outs.slice(from, from + lim).map((o, k) => ({ g: from + k, ...o })) }); }
-    if (p === '/api/spent' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; return json(res, 200, { spent: (d.kis || []).slice(0, 5000).map((k) => (S.kis[k] ? 'chain' : mempool.some((t) => t.vin.some((v) => v.ki === k)) ? 'pool' : null)) }); }
+    if (p === '/api/outputs') { const from = Math.max(0, +u.searchParams.get('from') || 0), lim = Math.min(4000, +u.searchParams.get('limit') || 2000); return json(res, 200, { height: height(), total: S.outs.length, outs: S.outs.slice(from, from + lim).map((o, k) => ({ g: from + k, ...o })) }); }    if (p === '/api/spent' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; return json(res, 200, { spent: (d.kis || []).slice(0, 5000).map((k) => (S.kis[k] ? 'chain' : mempool.some((t) => t.vin.some((v) => v.ki === k)) ? 'pool' : null)) }); }
     if (p === '/api/decoys') { const avoid = (u.searchParams.get('avoid') || '').split(',').filter(Boolean).map(Number), n = Math.min(15 * 8, +u.searchParams.get('n') || 15);
       // young chains cannot fill a big ring: say so in the same shape as the rest of the api instead of a 500
       try { return json(res, 200, { decoys: decoys(avoid, n), height: height() }); } catch (e) { return json(res, 200, { error: String(e), height: height() }); } }
-    if (p === '/api/tx' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; try { return json(res, 200, { ok: true, id: await submit(d.tx) }); } catch (e) { return json(res, 200, { error: String(e) }); } }
-    if (p === '/api/faucet' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; try { K.parseAddress(d.address); } catch (e) { return json(res, 200, { error: String(e) }); }
+    if (p === '/api/tx' && req.method === 'POST') { if (gated(res)) return; const d = await readJson(req, res); if (!d) return; try { return json(res, 200, { ok: true, id: await submit(d.tx) }); } catch (e) { return json(res, 200, { error: String(e) }); } }
+    if (p === '/api/faucet' && req.method === 'POST') { if (gated(res)) return; const d = await readJson(req, res); if (!d) return; try { K.parseAddress(d.address); } catch (e) { return json(res, 200, { error: String(e) }); }
       const key = d.address.slice(0, 80); if (limited(ip, 'f', 30 * 60_000) || (S.faucet[key] && now() - S.faucet[key] < 60 * 60_000)) return json(res, 200, { error: 'one faucet drip per hour' });
       try { const id = await submit(await walletSend(0, d.address, FAUCET)); S.faucet[key] = now(); save(); return json(res, 200, { ok: true, id, amount: String(FAUCET) }); } catch (e) { hits.delete(ip + 'f'); return json(res, 200, { error: String(e) }); } }
     if (p === '/api/work' && req.method === 'GET') { try { const j = getWork(u.searchParams.get('address') || ''); return json(res, 200, { id: j.id, height: j.T.b.height, diff: j.T.b.diff, hdr: j.T.hdr, reward: String(reward() + j.T.fees),
         argon: { type: 'argon2id', salt: 'mojave-chain-pow!', memoryKiB: ARGON_KIB, iterations: 1, parallelism: 1, hashLength: 32 }, rule: 'argon2id(hdr + "|" + nonce) * diff < 2^256' }); } catch (e) { return json(res, 200, { error: String(e.message || e) }); } }
-    if (p === '/api/work' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; if (now() - (hits.get(ip + 'wf') || 0) < 500) return json(res, 200, { error: 'slow down after a bad share' });   // only failed shares are throttled
+    if (p === '/api/work' && req.method === 'POST') { if (gated(res)) return; const d = await readJson(req, res); if (!d) return; if (now() - (hits.get(ip + 'wf') || 0) < 500) return json(res, 200, { error: 'slow down after a bad share' });   // only failed shares are throttled
       try { return json(res, 200, { ok: true, height: await submitWork(d.id, d.nonce) }); } catch (e) { const m = String(e.message || e); if (/difficulty|bad nonce/.test(m)) hits.set(ip + 'wf', now()); return json(res, 200, { error: m }); } }
     if (p === '/vendor-hw/argon2.umd.min.js') { res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'public, max-age=86400' }); return fs.createReadStream(path.join(ROOT, 'node_modules', 'hash-wasm', 'dist', 'argon2.umd.min.js')).pipe(res); }
     if (p === '/api/leaderboard') { const b = board(), a = u.searchParams.get('address'); if (a) { try { K.parseAddress(a); const id = minerId(a), all = Object.entries(S.board || {}).sort((x, y) => y[1].blocks - x[1].blocks || x[1].first - y[1].first), k = all.findIndex(([i]) => i === id); b.you = { id, rank: k >= 0 ? k + 1 : null, ...(S.board?.[id] || { blocks: 0 }) }; } catch {} } return json(res, 200, b); }
@@ -224,7 +226,7 @@ for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => {
   server.close(); worker.terminate().then(() => process.exit(0), () => process.exit(1));
   setTimeout(() => process.exit(1), 5000).unref(); });
 
-// rebuild wallet views from stored outputs in small batches so the API answers during a long rescan, then run
+// rebuild wallet views from stored outputs in short time slices so the API keeps answering during a long rescan, then run
 let rescan = 0;
-(function step() { const end = Math.min(rescan + 200, S.outs.length); for (; rescan < end; rescan++) scanOut(rescan);
-  if (rescan < S.outs.length) return setImmediate(step); console.log(`wallets rescanned · ${S.outs.length} outputs`); mine(); bots(); })();
+(function step() { const until = now() + 50; for (; rescan < S.outs.length && now() < until; rescan++) scanOut(rescan);   // a fixed 200 outputs can hold the loop for seconds
+  if (rescan < S.outs.length) return setImmediate(step); console.log(`wallets rescanned · ${S.outs.length} outputs`); ready = true; mine(); bots(); })();

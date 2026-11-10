@@ -18,6 +18,8 @@ try {
   const s = await req('/api/stats');
   ok(s.code === 200 && s.body.network === 'testnet' && s.body.ring === 16, 'stats: testnet, ring of 16');
   ok(typeof s.body.height === 'number' && typeof s.body.faucet === 'string' && /Argon2id/.test(s.body.pow), 'stats: height, faucet and pow rule');
+  const health = await req('/api/health');
+  ok(health.code === 200 && health.body.ready === true && typeof health.body.uptime === 'number', 'health: 200 and ready on a fresh chain');
 
   // a broken body is a client error, not a silently empty request
   const bad = await post('/api/spent', '{"kis":');
@@ -65,6 +67,23 @@ try {
   const saved = JSON.parse(fs.readFileSync(F2, 'utf8'));
   ok(saved.blocks.length > 1 && saved.blocks.at(-1).height === saved.blocks.length - 1, 'the file holds a whole chain: ' + saved.blocks.length + ' blocks');
   ok(saved.blocks.length - 1 >= seen, 'no block was lost between the api and the file');
+
+  // readiness: enough outputs that the rescan is still running when the first request lands
+  const D3 = path.join(dir, 'slow.json'), F3 = chainFile(D3), slow = JSON.parse(fs.readFileSync(F2, 'utf8')), some = slow.outs.slice(0, 12);
+  slow.outs = Array.from({ length: 120 }, (_, i) => ({ ...some[i % some.length] }));
+  fs.writeFileSync(F3, JSON.stringify(slow));
+  const warm = run({ PORT: P2, DATA_PATH: D3, BLOCK_SEC: '2' });
+  let first = null;
+  for (let i = 0; i < 300 && !first; i++) { try { first = await fetch(B2 + '/api/health'); } catch { await new Promise((r) => setTimeout(r, 25)); } }
+  ok(first && first.status === 503, 'health: 503 while the wallet view is still being rebuilt: ' + (first && first.status));
+  const hb = first ? await first.json() : {};
+  ok(hb.ready === false && hb.outputs === 120, 'it says ready false and how many outputs are on disk');
+  const hold = await fetch(B2 + '/api/faucet', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ address: 'mjc1nope' }) });
+  ok(hold.status === 503 && hold.headers.get('retry-after') === '2', 'a write during the rebuild is a 503 with retry after');
+  let later = null;
+  for (let i = 0; i < 600 && !later; i++) { const r = await fetch(B2 + '/api/health'); if (r.status === 200) later = await r.json(); else await new Promise((r2) => setTimeout(r2, 100)); }
+  ok(later && later.ready === true && later.ok === true, 'health: 200 and ready once the rescan finishes');
+  warm.kill(); await waitExit(warm);
 
   saved.blocks[1].prev = 'f'.repeat(64); fs.writeFileSync(F2, JSON.stringify(saved));
   const broken = run({ PORT: P2, DATA_PATH: D2, BLOCK_SEC: '2' });
