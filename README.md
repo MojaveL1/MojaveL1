@@ -1,3 +1,5 @@
+<p align="center"><img src="brand/logo/mojave-mark-512.png" width="120" alt="Mojavechain logo"></p>
+
 # Mojavechain
 
 **Private money for the quantum era.** A proof-of-work chain where every transaction hides its sender, receiver and amount, and where payments to quantum addresses are found with ML-KEM-768.
