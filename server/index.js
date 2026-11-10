@@ -142,7 +142,20 @@ function search(q) { q = String(q || '').trim(); if (/^\d+$/.test(q) && S.blocks
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.json': 'application/json', '.pdf': 'application/pdf' };
 const PAGES = { '/': 'index.html', '/explorer': 'explorer.html', '/wallet': 'wallet.html', '/docs': 'docs.html', '/whitepaper': 'whitepaper.html', '/mine': 'mine.html', '/faraday': 'faraday.html' };
 const json = (res, code, o) => { res.writeHead(code, { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'no-store' }); res.end(JSON.stringify(o)); };
-const body = (req) => new Promise((ok) => { let d = ''; req.on('data', (c) => { d += c; if (d.length > 3e6) req.destroy(); }); req.on('end', () => { try { ok(JSON.parse(d || '{}')); } catch { ok({}); } }); });
+// a json body, rejected properly. the old silent {} turned every bad request into a confusing error further down
+const BODY_MAX = 1 << 20, HARD_MAX = BODY_MAX * 8;   // a 16 input ring signature body is about 40 kB
+const httpError = (code, msg) => Object.assign(new Error(msg), { code });
+const body = (req) => new Promise((ok, no) => {
+  let d = '', n = 0, done = false;
+  req.on('data', (c) => { n += c.length; if (done) { if (n > HARD_MAX) req.destroy(); return; }
+    if (n > BODY_MAX) { done = true; return no(httpError(413, 'body is larger than ' + BODY_MAX + ' bytes')); } d += c; });
+  req.on('end', () => { if (done) return; done = true; let v;
+    try { v = JSON.parse(d || '{}'); } catch { return no(httpError(400, 'body is not valid json')); }
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return no(httpError(400, 'body must be a json object'));
+    ok(v); });
+  req.on('error', (e) => { if (!done) { done = true; no(e); } });
+});
+const readJson = async (req, res) => { try { return await body(req); } catch (e) { json(res, e.code === 413 ? 413 : 400, { error: e.message }); return null; } };
 const hits = new Map(); const limited = (ip, key, per) => { const k = ip + key, t = hits.get(k) || 0; if (now() - t < per) return true; hits.set(k, now()); return false; };
 
 http.createServer(async (req, res) => {
@@ -162,15 +175,17 @@ http.createServer(async (req, res) => {
     if (p === '/api/search') { const r = search(u.searchParams.get('q')); return json(res, r ? 200 : 404, r || { error: 'nothing found: try a block height, block hash, tx id or key image' }); }
     // wallet sync
     if (p === '/api/outputs') { const from = Math.max(0, +u.searchParams.get('from') || 0), lim = Math.min(4000, +u.searchParams.get('limit') || 2000); return json(res, 200, { height: height(), total: S.outs.length, outs: S.outs.slice(from, from + lim).map((o, k) => ({ g: from + k, ...o })) }); }
-    if (p === '/api/spent' && req.method === 'POST') { const d = await body(req); return json(res, 200, { spent: (d.kis || []).slice(0, 5000).map((k) => (S.kis[k] ? 'chain' : mempool.some((t) => t.vin.some((v) => v.ki === k)) ? 'pool' : null)) }); }
-    if (p === '/api/decoys') { const avoid = (u.searchParams.get('avoid') || '').split(',').filter(Boolean).map(Number), n = Math.min(15 * 8, +u.searchParams.get('n') || 15); return json(res, 200, { decoys: decoys(avoid, n), height: height() }); }
-    if (p === '/api/tx' && req.method === 'POST') { const d = await body(req); try { return json(res, 200, { ok: true, id: await submit(d.tx) }); } catch (e) { return json(res, 200, { error: String(e) }); } }
-    if (p === '/api/faucet' && req.method === 'POST') { const d = await body(req); try { K.parseAddress(d.address); } catch (e) { return json(res, 200, { error: String(e) }); }
+    if (p === '/api/spent' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; return json(res, 200, { spent: (d.kis || []).slice(0, 5000).map((k) => (S.kis[k] ? 'chain' : mempool.some((t) => t.vin.some((v) => v.ki === k)) ? 'pool' : null)) }); }
+    if (p === '/api/decoys') { const avoid = (u.searchParams.get('avoid') || '').split(',').filter(Boolean).map(Number), n = Math.min(15 * 8, +u.searchParams.get('n') || 15);
+      // young chains cannot fill a big ring: say so in the same shape as the rest of the api instead of a 500
+      try { return json(res, 200, { decoys: decoys(avoid, n), height: height() }); } catch (e) { return json(res, 200, { error: String(e), height: height() }); } }
+    if (p === '/api/tx' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; try { return json(res, 200, { ok: true, id: await submit(d.tx) }); } catch (e) { return json(res, 200, { error: String(e) }); } }
+    if (p === '/api/faucet' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; try { K.parseAddress(d.address); } catch (e) { return json(res, 200, { error: String(e) }); }
       const key = d.address.slice(0, 80); if (limited(ip, 'f', 30 * 60_000) || (S.faucet[key] && now() - S.faucet[key] < 60 * 60_000)) return json(res, 200, { error: 'one faucet drip per hour' });
       try { const id = await submit(await walletSend(0, d.address, FAUCET)); S.faucet[key] = now(); save(); return json(res, 200, { ok: true, id, amount: String(FAUCET) }); } catch (e) { hits.delete(ip + 'f'); return json(res, 200, { error: String(e) }); } }
     if (p === '/api/work' && req.method === 'GET') { try { const j = getWork(u.searchParams.get('address') || ''); return json(res, 200, { id: j.id, height: j.T.b.height, diff: j.T.b.diff, hdr: j.T.hdr, reward: String(reward() + j.T.fees),
         argon: { type: 'argon2id', salt: 'mojave-chain-pow!', memoryKiB: ARGON_KIB, iterations: 1, parallelism: 1, hashLength: 32 }, rule: 'argon2id(hdr + "|" + nonce) * diff < 2^256' }); } catch (e) { return json(res, 200, { error: String(e.message || e) }); } }
-    if (p === '/api/work' && req.method === 'POST') { const d = await body(req); if (now() - (hits.get(ip + 'wf') || 0) < 500) return json(res, 200, { error: 'slow down after a bad share' });   // only failed shares are throttled
+    if (p === '/api/work' && req.method === 'POST') { const d = await readJson(req, res); if (!d) return; if (now() - (hits.get(ip + 'wf') || 0) < 500) return json(res, 200, { error: 'slow down after a bad share' });   // only failed shares are throttled
       try { return json(res, 200, { ok: true, height: await submitWork(d.id, d.nonce) }); } catch (e) { const m = String(e.message || e); if (/difficulty|bad nonce/.test(m)) hits.set(ip + 'wf', now()); return json(res, 200, { error: m }); } }
     if (p === '/vendor-hw/argon2.umd.min.js') { res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'public, max-age=86400' }); return fs.createReadStream(path.join(ROOT, 'node_modules', 'hash-wasm', 'dist', 'argon2.umd.min.js')).pipe(res); }
     if (p === '/api/leaderboard') { const b = board(), a = u.searchParams.get('address'); if (a) { try { K.parseAddress(a); const id = minerId(a), all = Object.entries(S.board || {}).sort((x, y) => y[1].blocks - x[1].blocks || x[1].first - y[1].first), k = all.findIndex(([i]) => i === id); b.you = { id, rank: k >= 0 ? k + 1 : null, ...(S.board?.[id] || { blocks: 0 }) }; } catch {} } return json(res, 200, b); }

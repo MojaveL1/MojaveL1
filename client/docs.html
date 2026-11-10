@@ -43,6 +43,7 @@ POST /api/spent   {kis:[…]}         which key images are spent
 GET  /api/decoys?n=15&avoid=a,b     random ring members
 POST /api/tx      {tx}              submit a private transaction
 POST /api/faucet  {address}         25 tMOJAVE, once an hour</pre>
+<p class="note">Every POST takes one JSON object, at most 1 MiB (a 16 input transaction is about 40 kB). Malformed JSON is a 400 with the reason, a body over the limit is a 413, so a bad client sees what went wrong instead of an empty request.</p>
 
 <h3>Run a node</h3>
 <pre>git clone https://github.com/MojaveL1/MojaveL1
