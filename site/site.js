@@ -44,7 +44,10 @@
     } catch {
       document.querySelectorAll('[data-live]').forEach((el) => el.classList.add('off'));
       document.querySelectorAll('[data-live-txt]').forEach((el) => (el.textContent = 'node offline'));
-      put('[data-tip]', 'start the node to see this');
+      document.querySelectorAll('.net').forEach((el) => el.classList.add('dead'));
+      ['data-h', 'data-diff', 'data-time', 'data-pool', 'data-outs', 'data-ki', 'data-txs', 'data-qt', 'data-reward', 'data-emitted', 'data-public']
+        .forEach((k) => put('[' + k + ']', '—'));
+      put('[data-tip]', 'no node on this host');
       put('[data-ago]', '');
     }
   };
