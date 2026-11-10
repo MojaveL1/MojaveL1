@@ -8,7 +8,7 @@ import { randomBytes, bytesToHex, hexToBytes, concatBytes, utf8ToBytes } from '@
 import { ml_kem768 } from '@noble/post-quantum/ml-kem';
 
 export const N = 2n ** 252n + 27742317777372353535851937790883648493n;
-export const RING = 16, BITS = 48, DECIMALS = 6, UNIT = 10n ** 6n;
+export const RING = 16, BITS = 48, DECIMALS = 6, UNIT = 10n ** 6n, MATURITY = 3;
 export const G = RistrettoPoint.BASE, Z = RistrettoPoint.ZERO;
 export { bytesToHex as hex, hexToBytes as unhex };
 
@@ -67,6 +67,41 @@ export function scan(w, out, R, i) {
   return { v, mask, x: mod(k + w.a) };
 }
 export const keyImage = (x, P) => ph(mul(Hp(typeof P === 'string' ? hexToBytes(P) : enc(P)), x));
+
+// ---------- ring policy ----------
+// every member has to exist and be MATURITY blocks deep, so a fresh output can be neither spent nor
+// hidden behind (the real input is one of the 16). the node and the wallet run the same check
+export function vetRing(ring, heightOf, tip, maturity = MATURITY) {
+  if (!Array.isArray(ring) || ring.length !== RING) return 'ring must be 16 outputs';
+  const seen = new Set();
+  for (const g of ring) {
+    if (seen.has(g)) return 'ring must be 16 distinct outputs';
+    seen.add(g);
+    const h = heightOf(g);
+    if (h == null) return 'ring member not found';
+    if (tip - h < maturity) return 'ring member not mature';
+  }
+  return null;
+}
+
+// ---------- decoy selection ----------
+// real spends land in recent blocks, so a ring spread flat over the chain gives itself away. the
+// newest RECENT_SHARE of the chain gets RECENT_BOOST times the weight of everything older
+export const RECENT_SHARE = 0.15, RECENT_BOOST = 6;
+// ages = blocks deep per candidate; returns n indexes with no repeats
+export function pickDecoys(ages, n, rnd = Math.random) {
+  const span = ages.reduce((a, x) => Math.max(a, x + 1), 1), win = Math.max(MATURITY, Math.ceil(span * RECENT_SHARE));
+  const w = ages.map((a) => (a <= win ? RECENT_BOOST : 1)), used = new Set(), out = [];
+  let total = w.reduce((a, x) => a + x, 0);
+  while (out.length < n && total > 0) {
+    let r = rnd() * total, pick = -1;
+    for (let i = 0; i < w.length && pick < 0; i++) { if (used.has(i)) continue; r -= w[i]; if (r <= 0) pick = i; }
+    if (pick < 0) pick = w.findIndex((_, i) => !used.has(i));
+    if (pick < 0) break;
+    used.add(pick); out.push(pick); total -= w[pick];
+  }
+  return out;
+}
 
 // ---------- range proof: v in [0, 2^48) via per-bit 2-member ring signatures ----------
 export function rangeProve(v, x, msg) {
@@ -140,4 +175,14 @@ export function verifyTx(tx, getOut, spent) {
   for (const o of tx.vout) { if (!rangeVerify(o.C, o.rp, msg)) return 'range proof invalid'; sumOut = sumOut.add(pt(o.C)); }
   if (!sumIn.equals(sumOut.add(mul(H, fee)))) return 'amounts do not balance';
   return null;
+}
+
+// ---------- relay policy ----------
+// fee per byte, not fee: a ring tx is big, so it takes more block space than a small one paying the
+// same. the rate sits on the tx as a non-enumerable property so it never reaches txhash or any JSON
+export function feeRate(tx) {
+  if (tx._rate !== undefined) return tx._rate;
+  const r = Number(BigInt(tx.fee || 0)) / Math.max(1, JSON.stringify(tx).length);
+  Object.defineProperty(tx, '_rate', { value: r, enumerable: false, configurable: true });
+  return r;
 }

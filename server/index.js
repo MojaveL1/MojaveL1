@@ -11,7 +11,7 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'), CLIE
 const PORT = +process.env.PORT || 8266, DATA = (process.env.DATA_PATH || path.join(ROOT, 'data.json')).replace(/.json$/, '') + '-r2.json';   // r2: testnet reset 2026-11-02
 const BLOCK_SEC = +process.env.BLOCK_SEC || 30, ARGON_KIB = +process.env.ARGON_KIB || 8192, MIN_FEE = 10_000n;
 const MOJAVE_MINT = process.env.MOJAVE_MINT || '', NODE_PAUSE = +process.env.NODE_PAUSE || 0;   // ms the node's own miner rests between hashes, leaving room for public miners                         // $MOJAVE on Solana, shown on the site once set
-const FAUCET = 25n * K.UNIT, MATURITY = 3, SUPPLY = 100_000_000n * K.UNIT, TAIL = 2n * K.UNIT;
+const FAUCET = 25n * K.UNIT, MATURITY = K.MATURITY, SUPPLY = 100_000_000n * K.UNIT, TAIL = 2n * K.UNIT, MEMPOOL_MAX = 200;
 const now = () => Date.now(), big = (x) => BigInt(x), fmt = (v) => (Number(v) / 1e6).toLocaleString('en-US', { maximumFractionDigits: 6 });
 
 // ---------- state ----------
@@ -35,8 +35,12 @@ const spent = (ki) => !!S.kis[ki] || mempool.some((t) => t.vin.some((v) => v.ki 
 const owned = W.map(() => []);                                        // [{g,v,mask,x,ki}]
 function scanOut(g) { const o = S.outs[g]; W.forEach((w, k) => { const r = K.scan(w, o, o.R, o.i); if (r) owned[k].push({ g, v: r.v, mask: r.mask, x: r.x, ki: K.keyImage(r.x, o.P) }); }); }
 function balance(k) { return owned[k].filter((u) => !S.kis[u.ki]).reduce((a, u) => a + u.v, 0n); }
-function decoys(avoid, n = 15) { const lim = S.outs.length; const pool = S.outs.map((o, g) => g).filter((g) => height() - S.outs[g].h >= MATURITY || S.outs.length < 200);
-  const s = new Set(avoid), d = []; let tries = 0; while (d.length < n && tries++ < 5000) { const g = pool[Math.floor(Math.random() * pool.length)]; if (s.has(g)) continue; s.add(g); d.push({ gidx: g, ...getOut(g) }); } if (d.length < n) throw 'not enough outputs for a ring yet'; return d; }
+// mature outputs only, recent ones weighted up (pickDecoys). rings padded with minutes-old outputs
+// say as much about who is spending as a bad ring member does
+function decoys(avoid, n = 15) { const tipH = height(), s = new Set(avoid), pool = [];
+  for (let g = 0; g < S.outs.length; g++) if (tipH - S.outs[g].h >= MATURITY && !s.has(g)) pool.push(g);
+  if (pool.length < n) throw 'not enough mature outputs for a ring yet';
+  return K.pickDecoys(pool.map((g) => tipH - S.outs[g].h), n).map((i) => ({ gidx: pool[i], ...getOut(pool[i]) })); }
 async function walletSend(k, address, v) {
   const fee = MIN_FEE, need = big(v) + fee, inflight = new Set(mempool.flatMap((t) => t.vin.map((x) => x.ki)));
   const utxo = owned[k].filter((u) => !S.kis[u.ki] && !inflight.has(u.ki) && !reserved.has(u.ki) && height() - S.outs[u.g].h >= MATURITY).sort((a, b) => (a.v > b.v ? -1 : 1));
@@ -112,10 +116,15 @@ async function bots() {
       if (balance(from) < 5n * K.UNIT) { const tx = await walletSend(0, W[from][Math.random() < 0.5 ? 'qaddress' : 'address'], 400n * K.UNIT); await submit(tx); continue; }
       const amt = BigInt(Math.floor((0.5 + Math.random() * 20) * 1e6)); await submit(await walletSend(from, Math.random() < 0.35 ? to.qaddress : to.address, amt)); } catch (e) { /* not enough mature coins yet */ } }
 }
-async function submit(tx) { if (mempool.length > 200) throw 'mempool full'; if (!tx || !Array.isArray(tx.vin) || !Array.isArray(tx.vout)) throw 'malformed';
+async function submit(tx) { if (!tx || !Array.isArray(tx.vin) || !Array.isArray(tx.vout)) throw 'malformed';
+  // all 16 members: the node cannot see which one is real, so maturity has to hold for every one
+  for (const v of tx.vin) { const bad = K.vetRing(v && v.ring, (g) => (S.outs[g] ? S.outs[g].h : null), height()); if (bad) throw bad; }
   const ring = {}; for (const v of tx.vin) for (const g of Array.isArray(v.ring) ? v.ring.slice(0, 16) : []) { const o = getOut(g); if (o) ring[g] = o; }
   const kis = tx.vin.map((v) => v && v.ki).filter((k) => typeof k === 'string');
-  const err = await work('verify', tx, ring, kis.filter(spent)); if (err) throw err; if (kis.some(spent)) throw 'key image already spent'; if (big(tx.fee) < MIN_FEE) throw 'fee below 0.01 MOJAVE'; mempool.push(tx); return K.txhash(tx); }
+  const err = await work('verify', tx, ring, kis.filter(spent)); if (err) throw err; if (kis.some(spent)) throw 'key image already spent'; if (big(tx.fee) < MIN_FEE) throw 'fee below 0.01 MOJAVE';
+  // full pool: drop the cheapest tx for one that pays more per byte, rather than refusing everyone
+  if (mempool.length >= MEMPOOL_MAX) { const worst = mempool[mempool.length - 1]; if (K.feeRate(tx) <= K.feeRate(worst)) throw 'mempool full: fee too low to displace the cheapest tx'; mempool.pop(); }
+  mempool.push(tx); mempool.sort((a, b) => K.feeRate(b) - K.feeRate(a)); return K.txhash(tx); }
 
 // ---------- views ----------
 const txSummary = (id) => { const t = S.txs[id]; if (!t) return null; return { id, h: t.h, ts: t.ts, coinbase: !!t.coinbase, ins: t.vin ? t.vin.length : 0, outs: t.vout.length, fee: t.fee || '0', quantum: t.vout.filter((o) => o.ct).length, amount: t.coinbase ? t.vout[0].amt : null }; };
