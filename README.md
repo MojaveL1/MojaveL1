@@ -39,6 +39,8 @@ npm start              # http://localhost:8266
 
 Environment: `PORT`, `DATA_PATH` (chain file), `BLOCK_SEC` (target block time, default 30), `ARGON_KIB` (Argon2id memory, default 8192), `MOJAVE_MINT` (the $MOJAVE address shown on the site).
 
+On start the node checks the last 100 blocks: heights, links, hashes, transaction roots and the work behind each one. A chain file that fails the check, or one that cannot be read, stops the node with exit code 1 rather than being mined over or overwritten. `Ctrl` `C` writes the chain to disk before the process leaves, and the file itself is written to a temp name, flushed and renamed, so a kill or a power cut leaves the previous good copy intact.
+
 ## Mine it
 
 ```

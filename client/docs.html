@@ -48,7 +48,7 @@ POST /api/faucet  {address}         25 tMOJAVE, once an hour</pre>
 <h3>Run a node</h3>
 <pre>git clone https://github.com/MojaveL1/MojaveL1
 cd mojave && npm i && npm start      # http://localhost:8266</pre>
-<p>Environment: <code>PORT</code>, <code>DATA_PATH</code> (chain file), <code>BLOCK_SEC</code> (target block time), <code>ARGON_KIB</code> (Argon2id memory), <code>MOJAVE_MINT</code> (the $MOJAVE token address shown on the site).</p>
+<p>Environment: <code>PORT</code>, <code>DATA_PATH</code> (chain file), <code>BLOCK_SEC</code> (target block time), <code>ARGON_KIB</code> (Argon2id memory), <code>MOJAVE_MINT</code> (the $MOJAVE token address shown on the site). On start the node checks the last 100 blocks and refuses to run on a chain file that fails, rather than mining over it.</p>
 
 <h3>FAQ</h3>
 <p><b>Is tMOJAVE the same as $MOJAVE?</b> No. tMOJAVE is the testnet coin and has no value. $MOJAVE is the Solana token that funds and carries the project to mainnet.</p>

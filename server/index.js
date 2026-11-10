@@ -16,12 +16,19 @@ const now = () => Date.now(), big = (x) => BigInt(x), fmt = (v) => (Number(v) / 
 
 // ---------- state ----------
 let S = { blocks: [], outs: [], kis: {}, txs: {}, emitted: '0', seeds: null, faucet: {} };
-try { S = { ...S, ...JSON.parse(fs.readFileSync(DATA, 'utf8')) }; } catch {}
+try { S = { ...S, ...JSON.parse(fs.readFileSync(DATA, 'utf8')) }; }
+catch (e) { if (e.code !== 'ENOENT') { console.error('cannot read ' + DATA + ' (' + e.message + '). Move it aside to start a fresh chain.'); process.exit(1); } }
 if (!S.seeds) S.seeds = Array.from({ length: 7 }, () => K.wallet().seed);
 const W = S.seeds.map((s) => K.wallet(s)), MINER = W[0], BOTS = W.slice(1);
 const NAMES = ['miner', 'nyx', 'umbra', 'vesper', 'halcyon', 'ghostline', 'cipher'];
 let mempool = [], saveT = 0;
-const save = () => { if (saveT) return; saveT = setTimeout(() => { saveT = 0; try { fs.mkdirSync(path.dirname(DATA), { recursive: true }); fs.writeFileSync(DATA + '.tmp', JSON.stringify(S)); fs.renameSync(DATA + '.tmp', DATA); } catch (e) { console.error('save failed (' + DATA + '): ' + e.message); } }, 1500); };
+const save = () => { if (saveT) return; saveT = setTimeout(() => { saveT = 0; flush(); }, 1500); };
+// write a temp file, fsync it, then rename: a kill or a power cut leaves the last good chain, never half of a new one
+function flush() { if (saveT) { clearTimeout(saveT); saveT = 0; }
+  try { fs.mkdirSync(path.dirname(DATA), { recursive: true }); const tmp = DATA + '.tmp', fd = fs.openSync(tmp, 'w');
+    try { fs.writeFileSync(fd, JSON.stringify(S)); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+    fs.renameSync(tmp, DATA); return true; }
+  catch (e) { console.error('save failed (' + DATA + '): ' + e.message); return false; } }
 // heavy proof work runs on a worker thread so a ring signature never stalls the API
 const worker = new Worker(new URL('./worker.js', import.meta.url)), jobs = new Map(); let jobId = 0;
 worker.on('message', ({ id, ok, err }) => { const j = jobs.get(id); jobs.delete(id); err ? j[1](err) : j[0](ok); });
@@ -58,6 +65,16 @@ function nextDiff() { const n = S.blocks.length; if (n < 3) return 6; const t = 
   return Math.max(2, Math.round(t.diff * Math.min(1.25, Math.max(0.8, BLOCK_SEC / Math.max(1, span))))); }
 const powHash = (hdr, nonce) => new Promise((ok, no) => crypto.argon2('argon2id', { message: Buffer.from(hdr + '|' + nonce), nonce: Buffer.from('mojave-chain-pow!'), parallelism: 1, tagLength: 32, memory: ARGON_KIB, passes: 1 }, (e, h) => e ? no(e) : ok(h)));
 const meets = (h, diff) => BigInt('0x' + h.toString('hex')) * BigInt(diff) < 2n ** 256n;
+// the last 100 blocks have to agree with each other and with their own header before the node mines on top of them
+function checkChain() { const n = S.blocks.length, from = Math.max(0, n - 100);
+  for (let i = from; i < n; i++) { const b = S.blocks[i], at = 'block ' + i + ' ';
+    if (b.height !== i) return at + 'says height ' + b.height;
+    if (i && b.prev !== S.blocks[i - 1].hash) return at + 'does not follow the one before it';
+    if (K.txhash(header(b) + '|' + b.nonce) !== b.hash) return at + 'does not hash to its own header';
+    if (b.txs?.[0] !== b.minerTx || K.txhash(b.txs) !== b.root) return at + 'has a broken transaction root';
+    try { if (typeof b.pow !== 'string' || b.pow.length !== 64 || !meets(Buffer.from(b.pow, 'hex'), b.diff)) return at + 'does not meet difficulty ' + b.diff; }
+    catch { return at + 'has an unreadable proof of work'; } }
+  return null; }
 function addOutputs(txid, tx, h, clear) { tx.vout.forEach((o, i) => { const g = S.outs.length; S.outs.push({ P: o.P, C: o.C, amt: o.amt, ...(o.ct ? { ct: o.ct } : {}), ...(clear ? { clear: true } : {}), R: tx.R, i, h, txid }); scanOut(g); }); }
 // a block template paying the coinbase to `addr` (any mjc1/mjcq1 address); public miners and the node's own miner both use it
 function template(addr) {
@@ -158,7 +175,10 @@ const body = (req) => new Promise((ok, no) => {
 const readJson = async (req, res) => { try { return await body(req); } catch (e) { json(res, e.code === 413 ? 413 : 400, { error: e.message }); return null; } };
 const hits = new Map(); const limited = (ip, key, per) => { const k = ip + key, t = hits.get(k) || 0; if (now() - t < per) return true; hits.set(k, now()); return false; };
 
-http.createServer(async (req, res) => {
+// a chain that does not check out is not served: no mining on top of a corrupt file, and no overwriting it
+const broken = checkChain();
+if (broken) { console.error('chain check failed: ' + broken + ' · ' + DATA); process.exit(1); }
+const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x'), p = u.pathname, ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0];
   try {
     if (p === '/api/stats') return json(res, 200, stats());
@@ -198,6 +218,11 @@ http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': MIME[path.extname(full)] || 'application/octet-stream', 'cache-control': 'no-cache' }); fs.createReadStream(full).pipe(res);
   } catch (e) { json(res, 500, { error: String(e) }); }
 }).listen(PORT, () => { console.log(`Mojavechain on :${PORT} · height ${height()} · outputs ${S.outs.length}`); });
+// a signal stops the miner, writes the pending state and closes the listener, instead of dropping the last blocks
+for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => {
+  console.log('stopping · ' + (flush() ? 'state saved' : 'state not saved'));
+  server.close(); worker.terminate().then(() => process.exit(0), () => process.exit(1));
+  setTimeout(() => process.exit(1), 5000).unref(); });
 
 // rebuild wallet views from stored outputs in small batches so the API answers during a long rescan, then run
 let rescan = 0;

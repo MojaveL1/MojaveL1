@@ -1,17 +1,20 @@
-// Boots a node on a temp chain and checks the http surface: body limits, 404s, decoy shape.
+// Boots nodes on temp chains and checks the http surface, the save path and the boot chain check.
 import { spawn } from 'node:child_process'; import os from 'node:os'; import path from 'node:path'; import fs from 'node:fs';
-const PORT = String(19000 + Math.floor(Math.random() * 1000));
-const DATA = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mojave-http-')), 'chain.json');
-const NODE = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, PORT, DATA_PATH: DATA, BLOCK_SEC: '30' }, stdio: ['ignore', 'ignore', 'inherit'] });
 let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log('PASS', m); } else { fail++; console.log('FAIL', m); } };
-const API = 'http://localhost:' + PORT;
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mojave-test-')), DATA = path.join(dir, 'chain.json');
+const PORT = String(19000 + Math.floor(Math.random() * 800)), API = 'http://localhost:' + PORT;
+const chainFile = (p) => p.replace(/.json$/, '') + '-r2.json';   // the node keeps its own -r2 file next to DATA_PATH
+const run = (env) => { const p = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
+  p.out = ''; p.err = ''; p.stdout.on('data', (c) => (p.out += c)); p.stderr.on('data', (c) => (p.err += c)); return p; };
+const waitExit = (p, ms = 20000) => Promise.race([new Promise((r) => (p.exitCode !== null ? r(p.exitCode) : p.on('exit', (c) => r(c)))), new Promise((r) => setTimeout(() => r('timeout'), ms))]);
 const req = async (p, opt = {}) => { const r = await fetch(API + p, opt); const t = await r.text(); let b = null;
   try { b = JSON.parse(t); } catch {} return { code: r.status, type: r.headers.get('content-type') || '', body: b, raw: t }; };
 const post = (p, b) => req(p, { method: 'POST', headers: { 'content-type': 'application/json' }, body: typeof b === 'string' ? b : JSON.stringify(b) });
-const up = async () => { for (let i = 0; i < 80; i++) { try { if ((await req('/api/stats')).code === 200) return; } catch {} await new Promise((r) => setTimeout(r, 250)); } throw new Error('node did not start'); };
+const up = async (base) => { for (let i = 0; i < 80; i++) { try { if ((await fetch(base + '/api/stats')).ok) return; } catch {} await new Promise((r) => setTimeout(r, 250)); } throw new Error('node did not start'); };
 
+const NODE = run({ PORT, DATA_PATH: DATA, BLOCK_SEC: '30' });
 try {
-  await up();
+  await up(API);
   const s = await req('/api/stats');
   ok(s.code === 200 && s.body.network === 'testnet' && s.body.ring === 16, 'stats: testnet, ring of 16');
   ok(typeof s.body.height === 'number' && typeof s.body.faucet === 'string' && /Argon2id/.test(s.body.pow), 'stats: height, faucet and pow rule');
@@ -46,6 +49,33 @@ try {
   const q = await req('/api/search?q=zzz');
   ok(q.code === 404 && /nothing found/.test(q.body.error), 'search with no match says so');
 } catch (e) { fail++; console.log('FAIL', e.message); }
-NODE.kill(); await new Promise((r) => (NODE.exitCode !== null ? r() : NODE.on('exit', r)));
+NODE.kill(); await waitExit(NODE);
+
+// persistence: a chain with a few blocks, then a shutdown, a corrupted link and a file that is not json
+try {
+  const P2 = String(+PORT + 1), D2 = path.join(dir, 'keep.json'), F2 = chainFile(D2), B2 = 'http://localhost:' + P2;
+  const keeper = run({ PORT: P2, DATA_PATH: D2, BLOCK_SEC: '2' });
+  let seen = 0;
+  for (let i = 0; i < 160; i++) { try { seen = (await (await fetch(B2 + '/api/stats')).json()).height; if (seen >= 2) break; } catch {} await new Promise((r) => setTimeout(r, 250)); }
+  ok(seen >= 2, 'the miner produced blocks: height ' + seen);
+  await new Promise((r) => setTimeout(r, 2500));                       // leave the debounced save its window
+  if (process.platform === 'win32') { keeper.kill(); await waitExit(keeper); console.log('SKIP sigterm is a unix signal; this path is covered on linux'); }
+  else { keeper.kill('SIGTERM'); ok((await waitExit(keeper)) === 0, 'sigterm leaves with exit 0'); ok(/state saved/.test(keeper.out), 'sigterm writes the state first'); }
+
+  const saved = JSON.parse(fs.readFileSync(F2, 'utf8'));
+  ok(saved.blocks.length > 1 && saved.blocks.at(-1).height === saved.blocks.length - 1, 'the file holds a whole chain: ' + saved.blocks.length + ' blocks');
+  ok(saved.blocks.length - 1 >= seen, 'no block was lost between the api and the file');
+
+  saved.blocks[1].prev = 'f'.repeat(64); fs.writeFileSync(F2, JSON.stringify(saved));
+  const broken = run({ PORT: P2, DATA_PATH: D2, BLOCK_SEC: '2' });
+  ok((await waitExit(broken)) === 1, 'a broken prev link stops the node with exit 1');
+  ok(/chain check failed: block 1 does not follow/.test(broken.err), 'it names the block: ' + broken.err.trim().split('\n')[0].slice(0, 70));
+
+  fs.writeFileSync(F2, '{"blocks": [');
+  const junk = run({ PORT: P2, DATA_PATH: D2, BLOCK_SEC: '2' });
+  ok((await waitExit(junk)) === 1, 'a file that is not json stops the node with exit 1');
+  ok(/cannot read/.test(junk.err), 'it says the file cannot be read');
+} catch (e) { fail++; console.log('FAIL', e.message); }
+try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
