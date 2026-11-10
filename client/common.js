@@ -7,7 +7,7 @@ export const ago = (ts) => { const s = Math.max(0, (Date.now() - ts) / 1000); re
 export function toast(m, err) { const t = document.createElement('div'); t.className = 'toast' + (err ? ' err' : ''); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 3600); }
 export const copy = (v, what) => navigator.clipboard.writeText(v).then(() => toast((what || 'copied') + ' copied'));
 // the K mark, drawn as a stipple of squares so it matches the dot-field hero
-export const MARK = (s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="#ff3131" aria-hidden="true">${[[5, 3], [5, 6], [5, 9], [5, 12], [5, 15], [5, 18], [5, 21], [8, 12], [11, 9], [14, 6], [17, 3], [11, 15], [14, 18], [17, 21]].map(([x, y]) => `<rect x="${x - 1.2}" y="${y - 1.2}" width="2.4" height="2.4"/>`).join('')}<rect x="19" y="10.5" width="3" height="3" fill="#ffffff"/></svg>`;
+export const MARK = (s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="#e5c07b" aria-hidden="true">${[[5, 3], [5, 6], [5, 9], [5, 12], [5, 15], [5, 18], [5, 21], [8, 12], [11, 9], [14, 6], [17, 3], [11, 15], [14, 18], [17, 21]].map(([x, y]) => `<rect x="${x - 1.2}" y="${y - 1.2}" width="2.4" height="2.4"/>`).join('')}<rect x="19" y="10.5" width="3" height="3" fill="#ffffff"/></svg>`;
 export const LANDING = [['/#top', 'home'], ['/#threat', 'threat'], ['/#design', 'design'], ['/#payments', 'payments'], ['/#compare', 'compare'], ['/#roadmap', 'roadmap']];
 export const APP = [['/', 'home'], ['/explorer', 'explorer'], ['/wallet', 'wallet'], ['/docs', 'docs'], ['/whitepaper', 'whitepaper'], ['/mine', 'mine']];
 export function chrome(links = APP, cta = ['/wallet', 'open wallet ↗']) {

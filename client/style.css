@@ -1,7 +1,7 @@
 /* Mojavechain: ivory on midnight. Wide Archivo headlines, Geist Mono labels on hairlines,
    wireframe frames with corner ticks, a floating pill nav. Shared by every page. */
-:root{--ice:#ededed;--void:#0b0b0b;--carbon:#121211;--graphite:#1a1a19;--slate:#232322;--iron:#3a3936;--steel:#5b5955;--fog:#8e8e8e;--hi:#ff3131;--head:#dcdcdc;
-  --line:rgba(237,237,237,.14);--line2:rgba(237,237,237,.36);--ok:#c9e7c0;--bad:#ff6b6b;--q:#ff3131;
+:root{--ice:#ededed;--void:#0b0b0b;--carbon:#121211;--graphite:#1a1a19;--slate:#232322;--iron:#3a3936;--steel:#5b5955;--fog:#8e8e8e;--hi:#e5c07b;--head:#dcdcdc;
+  --line:rgba(237,237,237,.14);--line2:rgba(237,237,237,.36);--ok:#c9e7c0;--bad:#ff6b6b;--q:#e5c07b;
   --display:"Archivo",ui-sans-serif,system-ui,sans-serif;--mono:"Geist Mono",ui-monospace,Menlo,Consolas,monospace;
   /* legacy names used by explorer/wallet */--bg:var(--void);--bg2:var(--carbon);--panel:var(--graphite);--tx:var(--ice);--dim:var(--fog);--dim2:var(--steel);--ac:var(--hi);--ac2:var(--ice);--acd:var(--iron);color-scheme:dark}
 *,*:before,*:after{box-sizing:border-box;margin:0;padding:0}
